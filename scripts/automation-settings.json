@@ -6,7 +6,9 @@
     "",
     "--restricted と併用する前提で書いてある:",
     "  - Bash / PowerShell / REPL は --restricted により、そもそもツールとして存在しない",
-    "  - Write / Edit は --restricted によりワーキングディレクトリ内に限定される",
+    "  - ファイル編集は --restricted によりワーキングディレクトリ内に限定される",
+    "  - 許可は Edit で書く。Write(path) 形式のルールは無効で、Edit(path) が",
+    "    Write を含む全てのファイル編集ツールを覆う（claude が起動時に検証して弾く）",
     "  - WebFetch はドメインを列挙しない。収集は新しい巡回先を発見するのが仕事であり、",
     "    列挙するとその都度この設定を書き換える羽目になるため",
     "",
@@ -20,7 +22,6 @@
       "Grep",
       "WebSearch",
       "WebFetch",
-      "Write",
       "Edit"
     ],
     "deny": []
