@@ -1,7 +1,7 @@
 ---
 description: SSH attestation 関連の新着を巡回収集する（既読は除外）
 argument-hint: "[papers|specs|impl|industry]  省略時は全カテゴリ"
-allowed-tools: Read, Write, Edit, Glob, Grep, WebSearch, WebFetch, PowerShell
+allowed-tools: Read, Write, Edit, Glob, Grep, WebSearch, WebFetch
 ---
 
 # /collect — 定期収集
@@ -14,7 +14,8 @@ allowed-tools: Read, Write, Edit, Glob, Grep, WebSearch, WebFetch, PowerShell
 
 ### 1. 準備
 
-- `Get-Date -Format yyyy-MM-dd` で今日の日付 `TODAY` を得る。以降の日付は全てこれを使う（推測しない）。
+- 今日の日付 `TODAY` を、**コンテキストで与えられる `currentDate`** から取る（`YYYY-MM-DD` 形式）。以降の日付は全てこれを使う。**推測で書かない。**
+  - このコマンドは週次の自動実行（`scripts/weekly-collect.ps1`）から `--restricted` 付きで呼ばれることがあり、その場合 PowerShell 等のコマンド実行系ツールは使えない。日付をシェルから取ろうとしないこと。
 - `docs/scope.md` を読む — 検索キーワード、**除外条件**、relevance 判定基準。
 - `docs/sources.md` を読む — 対象カテゴリの巡回先。
 - `state/seen.jsonl` を読み、`id` の集合 `SEEN` を作る。ファイルが空なら `SEEN` は空集合（初回実行）。

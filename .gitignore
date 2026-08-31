@@ -13,6 +13,9 @@ $RECYCLE.BIN/
 # macOS（他の PC が Mac の場合に備えて）
 .DS_Store
 
+# 週次自動実行のログ（ローカル確認用。OneDrive には残るが git には入れない）
+logs/
+
 # 注意: inbox/ は無視しない。
 # 生ログだが「いつ何を見たか」の記録として履歴に価値があるため追跡する。
 # notes/ digests/ state/ related-work/ も同様にすべて追跡対象。

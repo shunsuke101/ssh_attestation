@@ -9,6 +9,8 @@
       "WebFetch(domain:export.arxiv.org)",
       "WebFetch(domain:eprint.iacr.org)",
       "WebFetch(domain:datatracker.ietf.org)",
+      "WebFetch(domain:mailarchive.ietf.org)",
+      "WebFetch(domain:www.iana.org)",
       "WebFetch(domain:www.ietf.org)",
       "WebFetch(domain:www.rfc-editor.org)",
       "WebFetch(domain:trustedcomputinggroup.org)",
