@@ -50,3 +50,28 @@ related-work/landscape.md   分野の分類マップと自分の立ち位置
 - **自由に編集**: `docs/`、`notes/`、`digests/`、`related-work/landscape.md`
 - **追記のみ**: `state/seen.jsonl`、`related-work/bibliography.bib` — 既存行を書き換えると既読判定と引用が壊れる
 - **消してよい**: `inbox/` — 生ログなので、`/digest` を回した後の古い月は消して構わない
+
+## git 運用（OneDrive 内にリポジトリがあることの注意）
+
+このフォルダは git 管理下にあり、**同時に OneDrive の同期対象でもある**。同期の担当が二重になっているので、次のルールを守らないと `.git` が壊れる。
+
+### 守ること
+
+1. **PC を切り替える前に、OneDrive の同期完了を必ず待つ。** タスクトレイの OneDrive アイコンがチェックマークになってから、別の PC で作業を始める。同期の途中で別 PC が触ると `.git/objects` が中途半端な状態で配られ、リポジトリが壊れる。
+2. **こまめに push する。** ローカルにしかないコミットは OneDrive 事故で失われる。リモートは単なるバックアップではなく、**この構成における唯一の復旧手段**。
+3. **このフォルダは「常にこのデバイス上に保持」に固定してある**（`attrib +P -U`）。解除しないこと。Files On-Demand が `.git` の中身を雲だけにすると git が動かなくなる。
+
+### `.git` が壊れたら
+
+```powershell
+# 1. 壊れたフォルダを退避（消さない。未 push の変更が入っている可能性がある）
+Rename-Item ssh_attestaion ssh_attestaion_broken
+# 2. リモートから clone し直す
+git clone <リモート URL> ssh_attestaion
+# 3. 退避した方に未 push の変更があれば、ファイルを手でコピーして差分を確認する
+```
+
+### OneDrive が競合コピーを作ったら
+
+`ファイル名-PC名.md` のようなファイルが増えていたら、OneDrive が競合を検出した印。`git log` と `git diff` で正しい方を判断し、手で解決してから競合コピーを削除する。**`state/seen.jsonl` の競合は特に慎重に**（追記専用なので、両方の追記行を残すのが原則）。
+

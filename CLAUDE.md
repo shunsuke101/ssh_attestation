@@ -37,6 +37,8 @@ SSH に **attestation（機器証明 / リモート認証）** 機能を実現�
 
 フィールド: `id` / `type`(`paper`|`spec`|`impl`|`industry`) / `title`(英語原題) / `url` / `first_seen`(YYYY-MM-DD) / `relevance`(`high`|`medium`|`low`) / `note`(ノートの相対パス、無ければ `null`)
 
+**追記時の改行コードに注意**: PowerShell の `Add-Content` は CRLF を書き込む。このリポジトリは `.gitattributes` で LF に固定してあるので git 側は正規化するが、作業コピーが mixed になり `git ls-files --eol` が汚れる。追記は `Add-Content -Encoding utf8` ではなく、**Write ツールでファイル全体を書き直すか、書き込み後に `git checkout -- state/seen.jsonl` で正規化する**こと。
+
 ### `id` の正規化ルール（この順で優先）
 
 | 種別 | 形式 | 例 |
