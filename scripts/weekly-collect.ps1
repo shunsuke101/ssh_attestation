@@ -147,7 +147,24 @@ $headBefore = git rev-parse HEAD
 
 # ------------------------------------------------- 3. /collect を実行
 
-$prompt = if ($Category) { "/collect $Category" } else { "/collect" }
+# --restricted 下ではプロジェクトのスラッシュコマンド (/collect) が解決されない
+# （"Unknown command: /collect" となり、しかも exit 0 が返るので気づきにくい）。
+# そこでコマンド定義ファイルの中身を読み、そのままプロンプトとして渡す。
+# 定義は .claude/commands/collect.md 一箇所のままなので、手動実行との齟齬は生じない。
+$commandFile = Join-Path $RepoRoot '.claude\commands\collect.md'
+if (-not (Test-Path $commandFile)) {
+    Write-Log "コマンド定義 $commandFile が見つかりません。中止します。" 'ERROR'
+    Save-LastRun -Status 'collect.md が無い' -ExitCode 8
+    exit 8
+}
+
+$commandBody = Get-Content $commandFile -Raw -Encoding utf8
+# 先頭の YAML frontmatter を除去する
+$commandBody = [regex]::Replace($commandBody, '^---\r?\n.*?\r?\n---\r?\n', '', 'Singleline')
+# $ARGUMENTS を実際のカテゴリに差し替える
+$prompt = $commandBody -replace '\$ARGUMENTS', $Category
+
+Write-Log "プロンプトを .claude/commands/collect.md から構築しました（$($prompt.Length) 文字）"
 
 if ($DryRun) {
     Write-Log "DryRun のため claude は実行しません（実行予定: $prompt）" 'WARN'
@@ -170,11 +187,24 @@ if ($DryRun) {
         '--permission-mode', 'acceptEdits'
     )
 
-    Write-Log "claude を実行します: $prompt"
-    Write-Log "  フラグ: $($claudeArgs[1..($claudeArgs.Count-1)] -join ' ')"
+    Write-Log "claude を実行します（カテゴリ: $(if ($Category) { $Category } else { '全て' })）"
+    Write-Log "  フラグ: --restricted --tools ... --settings ... --permission-mode acceptEdits"
 
-    & claude @claudeArgs 2>&1 | ForEach-Object { Write-Log "  claude> $_" }
+    # 出力は判定にも使うので変数に溜めつつログへ流す
+    $claudeOut = & claude @claudeArgs 2>&1 | ForEach-Object {
+        Write-Log "  claude> $_"
+        $_
+    }
     $claudeExit = $LASTEXITCODE
+
+    # claude はプロンプト解決に失敗しても exit 0 を返すことがある
+    # （例: "Unknown command: /collect"）。終了コードだけを信用しない。
+    $outText = ($claudeOut | Out-String)
+    if ($outText -match 'Unknown command|^Error:|not supported in restricted mode') {
+        Write-Log "claude の出力に失敗を示す文字列が含まれています。収集は行われていません。" 'ERROR'
+        Save-LastRun -Status 'claude がプロンプトを実行できなかった（要確認）' -ExitCode 9
+        exit 9
+    }
 
     if ($claudeExit -eq 0) {
         Write-Log "claude が正常終了しました"
