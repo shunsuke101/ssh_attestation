@@ -7,11 +7,25 @@
 
     設計方針: エージェントに git を触らせない。
     claude は収集とファイル書き込みだけを行い、pull / commit / push は
-    このスクリプトが決定論的に実行する。そのため claude は
-      --restricted                    … Bash/PowerShell/REPL を丸ごと外す
-      --permission-mode bypassPermissions … 無人実行で権限プロンプトに答えられないため
-    の 2 つをセットで付けて起動する。前者で任意コマンド実行を塞いだ上で
-    後者を付けるので、影響範囲はリポジトリ内のファイル書き込みと Web 取得に限られる。
+    このスクリプトが決定論的に実行する。そのため claude は次の 4 つをセットで付ける。
+
+      --restricted
+          Bash/PowerShell/REPL を丸ごと外す。あわせて WebFetch も外れ、
+          ファイル操作はワーキングディレクトリ内に限定され、
+          プロジェクトの .claude/settings.json は無視される。
+      --tools "Read,Write,Edit,Glob,Grep,WebSearch,WebFetch"
+          --restricted が外した WebFetch を明示的に戻す。
+          コマンド実行系は戻さない。
+      --settings scripts\automation-settings.json
+          --restricted は settings ファイルを無視するが、--settings で
+          明示したものだけは適用される。ここで権限を与える。
+      --permission-mode acceptEdits
+          無人実行では権限プロンプトに答えられないため。
+
+    注意: --permission-mode bypassPermissions は --restricted と併用できない
+    （"bypassPermissions not supported in restricted mode" で起動に失敗する）。
+
+    この構成では、影響範囲はリポジトリ内のファイル書き込みと Web の読み取りに限られる。
 
     リポジトリルートは $PSScriptRoot から相対で解決するため、
     フォルダ名が変わっても動く。
@@ -139,12 +153,27 @@ if ($DryRun) {
     Write-Log "DryRun のため claude は実行しません（実行予定: $prompt）" 'WARN'
     $claudeExit = 0
 } else {
-    Write-Log "claude を実行します: $prompt"
-    Write-Log "  フラグ: --restricted --permission-mode bypassPermissions"
+    $settingsPath = Join-Path $PSScriptRoot 'automation-settings.json'
+    if (-not (Test-Path $settingsPath)) {
+        Write-Log "権限設定 $settingsPath が見つかりません。中止します。" 'ERROR'
+        Save-LastRun -Status 'automation-settings.json が無い' -ExitCode 7
+        exit 7
+    }
 
-    # 出力はそのままログへ。--restricted によりコマンド実行系ツールは無効。
-    & claude -p $prompt --restricted --permission-mode bypassPermissions 2>&1 |
-        ForEach-Object { Write-Log "  claude> $_" }
+    # --restricted でコマンド実行系を落とし、--tools で WebFetch だけ戻す。
+    # --restricted は .claude/settings.json を無視するため、権限は --settings で渡す。
+    $claudeArgs = @(
+        '-p', $prompt
+        '--restricted'
+        '--tools', 'Read,Write,Edit,Glob,Grep,WebSearch,WebFetch'
+        '--settings', $settingsPath
+        '--permission-mode', 'acceptEdits'
+    )
+
+    Write-Log "claude を実行します: $prompt"
+    Write-Log "  フラグ: $($claudeArgs[1..($claudeArgs.Count-1)] -join ' ')"
+
+    & claude @claudeArgs 2>&1 | ForEach-Object { Write-Log "  claude> $_" }
     $claudeExit = $LASTEXITCODE
 
     if ($claudeExit -eq 0) {

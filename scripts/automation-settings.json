@@ -1,0 +1,28 @@
+{
+  "_comment": [
+    "週次自動実行（scripts/weekly-collect.ps1）専用の権限設定。",
+    "claude --restricted はプロジェクトの .claude/settings.json を無視するが、",
+    "--settings で明示的に渡したこのファイルは適用される。",
+    "",
+    "--restricted と併用する前提で書いてある:",
+    "  - Bash / PowerShell / REPL は --restricted により、そもそもツールとして存在しない",
+    "  - Write / Edit は --restricted によりワーキングディレクトリ内に限定される",
+    "  - WebFetch はドメインを列挙しない。収集は新しい巡回先を発見するのが仕事であり、",
+    "    列挙するとその都度この設定を書き換える羽目になるため",
+    "",
+    "したがって allow が広く見えても、実効的な影響範囲は",
+    "「リポジトリ内のファイル書き込み」と「Web の読み取り」に限られる。"
+  ],
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "WebSearch",
+      "WebFetch",
+      "Write",
+      "Edit"
+    ],
+    "deny": []
+  }
+}
