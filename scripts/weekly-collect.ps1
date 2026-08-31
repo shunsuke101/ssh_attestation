@@ -65,6 +65,29 @@ function Write-Log {
     Add-Content -Path $LogFile -Value $line -Encoding utf8
 }
 
+function Invoke-Native {
+    <#
+        PowerShell 5.1 では native コマンドに 2>&1 を付けると、stderr の各行が
+        NativeCommandError として ErrorRecord に包まれる。$ErrorActionPreference='Stop'
+        と組み合わさると、git push のように「正常終了でも stderr に進捗を書く」
+        コマンドでスクリプトが止まってしまう（終了コードは 0 なのに失敗扱いになる）。
+        そのためここだけ 'Continue' に落とし、成否は $LASTEXITCODE だけで判定する。
+    #>
+    param(
+        [Parameter(Mandatory)][string]$Command,
+        [string[]]$Arguments = @()
+    )
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $output = & $Command @Arguments 2>&1 | ForEach-Object { $_.ToString() }
+        return [pscustomobject]@{ Output = $output; ExitCode = $LASTEXITCODE }
+    }
+    finally {
+        $ErrorActionPreference = $prev
+    }
+}
+
 function Save-LastRun {
     param([string]$Status, [int]$ExitCode, [string]$Commit = '')
     @(
@@ -132,10 +155,10 @@ scripts/weekly-collect.ps1 が自動実行前に検出した変更。
 # ------------------------------------------------- 2. 先にリモートを取り込む
 
 Write-Log "git pull --rebase を実行します"
-$pull = git pull --rebase 2>&1
-$pull | ForEach-Object { Write-Log "  git> $_" }
+$pull = Invoke-Native git @('pull', '--rebase')
+$pull.Output | ForEach-Object { Write-Log "  git> $_" }
 
-if ($LASTEXITCODE -ne 0) {
+if ($pull.ExitCode -ne 0) {
     Write-Log "pull に失敗しました。競合の可能性があります。自動解決はせず中止します。" 'ERROR'
     Write-Log "手動で 'git status' を確認してください（rebase 途中なら 'git rebase --abort'）。" 'ERROR'
     Save-LastRun -Status 'git pull 失敗（要手動対応）' -ExitCode 2
@@ -190,16 +213,13 @@ if ($DryRun) {
     Write-Log "claude を実行します（カテゴリ: $(if ($Category) { $Category } else { '全て' })）"
     Write-Log "  フラグ: --restricted --tools ... --settings ... --permission-mode acceptEdits"
 
-    # 出力は判定にも使うので変数に溜めつつログへ流す
-    $claudeOut = & claude @claudeArgs 2>&1 | ForEach-Object {
-        Write-Log "  claude> $_"
-        $_
-    }
-    $claudeExit = $LASTEXITCODE
+    $run = Invoke-Native claude $claudeArgs
+    $run.Output | ForEach-Object { Write-Log "  claude> $_" }
+    $claudeExit = $run.ExitCode
 
     # claude はプロンプト解決に失敗しても exit 0 を返すことがある
     # （例: "Unknown command: /collect"）。終了コードだけを信用しない。
-    $outText = ($claudeOut | Out-String)
+    $outText = ($run.Output | Out-String)
     if ($outText -match 'Unknown command|^Error:|not supported in restricted mode') {
         Write-Log "claude の出力に失敗を示す文字列が含まれています。収集は行われていません。" 'ERROR'
         Save-LastRun -Status 'claude がプロンプトを実行できなかった（要確認）' -ExitCode 9
@@ -217,8 +237,25 @@ if ($DryRun) {
 
 $changes = git status --porcelain
 if (-not $changes) {
-    Write-Log "変更なし（新着なし）。コミットせず終了します。"
-    Save-LastRun -Status '新着なし' -ExitCode $claudeExit
+    Write-Log "作業ツリーに変更はありません（新着なし）。"
+
+    # 収集の成果が無くても、退避コミットがローカルに溜まっていれば push する。
+    # ここを飛ばすと退避分が push されないまま残り、次回の pull で面倒になる。
+    $ahead = (Invoke-Native git @('rev-list', '--count', 'origin/main..HEAD')).Output | Select-Object -First 1
+    if ([int]$ahead -gt 0) {
+        Write-Log "未 push のコミットが $ahead 件あります。push します。"
+        $p = Invoke-Native git @('push')
+        $p.Output | ForEach-Object { Write-Log "  git> $_" }
+        if ($p.ExitCode -ne 0) {
+            Write-Log "push に失敗しました。" 'ERROR'
+            Save-LastRun -Status '新着なし / push 失敗' -ExitCode 5 -Commit (git rev-parse HEAD)
+            exit 5
+        }
+        Write-Log "push しました。"
+        Save-LastRun -Status "新着なし（退避コミット $ahead 件を push）" -ExitCode $claudeExit -Commit (git rev-parse HEAD)
+    } else {
+        Save-LastRun -Status '新着なし' -ExitCode $claudeExit
+    }
     exit $claudeExit
 }
 
@@ -248,10 +285,10 @@ $headAfter = git rev-parse HEAD
 Write-Log "コミットしました: $headAfter"
 
 Write-Log "git push を実行します"
-$push = git push 2>&1
-$push | ForEach-Object { Write-Log "  git> $_" }
+$push = Invoke-Native git @('push')
+$push.Output | ForEach-Object { Write-Log "  git> $_" }
 
-if ($LASTEXITCODE -ne 0) {
+if ($push.ExitCode -ne 0) {
     Write-Log "push に失敗しました。コミットはローカルに残っています。" 'ERROR'
     Write-Log "SSH 鍵とネットワークを確認し、手動で 'git push' してください。" 'ERROR'
     Save-LastRun -Status 'git push 失敗（コミットはローカルに存在）' -ExitCode 5 -Commit $headAfter
