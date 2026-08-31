@@ -65,9 +65,9 @@ related-work/landscape.md   分野の分類マップと自分の立ち位置
 
 ```powershell
 # 1. 壊れたフォルダを退避（消さない。未 push の変更が入っている可能性がある）
-Rename-Item ssh_attestaion ssh_attestaion_broken
+Rename-Item ssh_attestation ssh_attestation_broken
 # 2. リモートから clone し直す
-git clone <リモート URL> ssh_attestaion
+git clone <リモート URL> ssh_attestation
 # 3. 退避した方に未 push の変更があれば、ファイルを手でコピーして差分を確認する
 ```
 
