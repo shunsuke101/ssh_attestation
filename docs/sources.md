@@ -57,21 +57,23 @@
 
 | 優先 | 名前 | URL / エンドポイント | 取得方法 | 最終確認日 |
 |---|---|---|---|---|
-| A | OpenSSH リリースノート | `https://www.openssh.org/releasenotes.html` | WebFetch。**`openssh.com` は `openssh.org` に 301 するので `.org` を直接叩く**。動作確認済 2026-08-21（最新 10.5 / 2026-08-11） | 2026-08-21 |
-| A | openssh-unix-dev ML | `https://marc.info/?l=openssh-unix-dev` | WebFetch。attestation / TPM / FIDO 関連スレのみ拾う | — |
+| A | OpenSSH リリースノート | `https://www.openssh.org/releasenotes.html` | WebFetch。**`openssh.com` は `openssh.org` に 301 するので `.org` を直接叩く**。動作確認済 2026-08-31（最新は依然 10.5 / 2026-08-11） | 2026-08-31 |
+| A | openssh-unix-dev ML | `https://marc.info/?l=openssh-unix-dev` | WebFetch。attestation / TPM / FIDO 関連スレのみ拾う。**2026-08-31 に失敗**（トップは月別インデックスのみでスレッド件名が出ない）。月別ページを直接叩く経路を次回試す | — |
 | B | OpenSSH PROTOCOL 系ファイル | `https://raw.githubusercontent.com/openssh/openssh-portable/master/PROTOCOL{,.u2f,.agent,.sshsig,.key,.krl,.mux}` | raw を WebFetch。**動作確認済 2026-08-21**。de facto 標準の一次情報。ファイル一覧は `https://api.github.com/repos/openssh/openssh-portable/contents/` で確認 | 2026-08-21 |
-| A | ssh-tpm-agent | `https://api.github.com/repos/Foxboron/ssh-tpm-agent/releases` | GitHub API。**動作確認済 2026-08-21**（最新 v0.9.0 / 2026-05-04） | 2026-08-21 |
-| B | go-attestation | `https://api.github.com/repos/google/go-attestation/releases` | GitHub API | — |
-| B | Keylime | `https://api.github.com/repos/keylime/keylime/releases` | GitHub API | — |
-| B | Parsec | `https://api.github.com/repos/parallaxsecond/parsec/releases` | GitHub API | — |
-| B | GitHub 横断検索 | `https://api.github.com/search/repositories?q=ssh+attestation+in:name,description&sort=stars&order=desc` | GitHub API。新規プロジェクトの発見用。**`in:readme` と `sort=updated` は使わない**（下記注） | 2026-08-21 |
-| C | tpm2-software | `https://github.com/tpm2-software` | WebFetch。tpm2-tss / tpm2-tools のリリース | — |
-| C | Linux IMA / integrity | `https://lore.kernel.org/linux-integrity/` | WebFetch。カーネル側の動き | — |
-| C | sigstore | `https://api.github.com/repos/sigstore/sigstore/releases` | GitHub API。署名検証モデルの参考 | — |
+| A | ssh-tpm-agent | `https://api.github.com/repos/Foxboron/ssh-tpm-agent/releases` | GitHub API。**動作確認済 2026-08-31**（最新は依然 v0.9.0 / 2026-05-04） | 2026-08-31 |
+| B | go-attestation | `https://api.github.com/repos/google/go-attestation/releases` | GitHub API。**動作確認済 2026-08-31**（最新 v0.6.4 / 2026-08-11。リリース頻度が高く当たりが良い） | 2026-08-31 |
+| B | Keylime | `https://api.github.com/repos/keylime/keylime/releases` | GitHub API。**動作確認済 2026-08-31**（最新 v7.14.3 / 2026-07-06） | 2026-08-31 |
+| B | Parsec | `https://api.github.com/repos/parallaxsecond/parsec/releases` | GitHub API。**動作確認済 2026-08-31**。リリースが年 1 回程度で内容も依存更新中心。C に落としてよい | 2026-08-31 |
+| B | GitHub 横断検索 | `https://api.github.com/search/repositories?q=ssh+attestation+in:name,description&sort=stars&order=desc` | GitHub API。新規プロジェクトの発見用。**`in:readme` と `sort=updated` は使わない**（下記注）。2026-08-31 は 12 件ヒットし新規 6 件を拾えた | 2026-08-31 |
+| C | tpm2-software | `https://api.github.com/repos/tpm2-software/tpm2-tools/releases` | GitHub API。**動作確認済 2026-08-31**（最新 5.8 / 2026-07-15）。内容は CVE 修正中心で attestation の新機能は出にくい | 2026-08-31 |
+| C | Linux IMA / integrity | `https://lore.kernel.org/linux-integrity/` | WebFetch。カーネル側の動き。**2026-08-31 に Access Denied で取得不可**。代替経路（`https://lore.kernel.org/linux-integrity/new.atom` 等）を次回試す | — |
+| C | sigstore | `https://api.github.com/repos/sigstore/sigstore/releases` | GitHub API。署名検証モデルの参考。**動作確認済 2026-08-31**（最新 v1.10.9 / 2026-08-03）。内容は KMS / TUF まわりで attestation とは無関係。収穫が薄い | 2026-08-31 |
 
 **GitHub API の注意**: 未認証だと 60 req/hour。1 回の `/collect` で叩くのは上記程度に留める。403 が返ったら inbox に `レート制限で取得失敗` と記録して次に進む。
 
 **注（横断検索のクエリ）**: 2026-08-21 に `q=ssh+attestation+in:name,description,readme&sort=updated` を試したところ、**total 3,851 件・上位は「今日 push された無関係リポジトリ」で埋まり、実質使い物にならなかった**。原因は (1) `in:readme` が「SBOM の sigstore attestation」等を大量に拾う、(2) `sort=updated` が関連度を完全に無視する、の 2 点。**`in:name,description` に絞り、`sort=stars` を使うこと。** なお 2026-08-21 に発見された有用な実装 2 件（`ssh-tpm-ca-authority`, `HardwareProtectedSsh`）は、いずれも GitHub 検索ではなく**汎用 Web 検索**経由で見つかった。実装の発見は Web 検索の方が当たりが良い。
+
+2026-08-31 も同じ傾向。`in:name,description` + `sort=stars` の横断検索は 12 件と扱える量に収まり `ssh-sk-verify` 等を拾えたが、この日の最大の収穫だった `smallstep/ssh-attest-proxy` は**リポジトリに description が無いため GitHub 検索には引っかからず、汎用 Web 検索でしか出てこなかった**。impl は GitHub API と Web 検索を必ず併用すること。
 
 ---
 
