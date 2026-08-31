@@ -1,0 +1,197 @@
+% SSH Attestation — 参考文献
+%
+% 規約（詳細は ../CLAUDE.md）:
+%   - 追記のみ。既存エントリは書き換えない。
+%   - キー: <第一著者姓小文字><年><キーワード>  例: tanaka2025tpmssh
+%     衝突時は末尾に a, b を付す。
+%   - note = {notes/papers/....md} で対応ノートへのパスを持たせる。
+%   - RFC は @techreport、arXiv プレプリントは @misc（eprint / archivePrefix 付き）。
+%   - 書誌情報は一次情報で確認したものだけ書く。推測で埋めない。
+%
+% 記入例（実エントリを追加する際はこのコメントの下に置く）:
+%
+% @misc{doe2025attestedssh,
+%   author        = {Jane Doe and John Roe},
+%   title         = {Attested {SSH}: Hardware-Rooted Host Authentication},
+%   year          = {2025},
+%   eprint        = {2501.12345},
+%   archivePrefix = {arXiv},
+%   primaryClass  = {cs.CR},
+%   url           = {https://arxiv.org/abs/2501.12345},
+%   note          = {notes/papers/2025-doe-attested-ssh.md}
+% }
+%
+% @techreport{birkholz2023rats,
+%   author      = {Henk Birkholz and Dave Thaler and Michael Richardson and Ned Smith and Wei Pan},
+%   title       = {Remote {ATtestation} {procedureS} ({RATS}) Architecture},
+%   number      = {RFC 9334},
+%   type        = {RFC},
+%   institution = {IETF},
+%   year        = {2023},
+%   url         = {https://www.rfc-editor.org/info/rfc9334},
+%   note        = {notes/specs/rfc9334-rats-architecture.md}
+% }
+
+% ============================================================
+% 2026-08-21 追記（/collect 初回実行）
+% ============================================================
+
+@techreport{birkholz2023rats,
+  author      = {Henk Birkholz and Dave Thaler and Michael Richardson and Ned Smith and Wei Pan},
+  title       = {Remote {ATtestation} {procedureS} ({RATS}) Architecture},
+  number      = {RFC 9334},
+  type        = {RFC},
+  institution = {Internet Engineering Task Force},
+  year        = {2023},
+  month       = jan,
+  url         = {https://www.rfc-editor.org/info/rfc9334},
+  note        = {notes/specs/rfc9334-rats-architecture.md}
+}
+
+@misc{sardar2026expat,
+  author       = {Muhammad Usama Sardar and Thomas Fossati and Tirumaleswar Reddy.K and Yaron Sheffer and Hannes Tschofenig and Ionu\c{t} Mihalcea},
+  title        = {Remote Attestation with Exported Authenticators},
+  howpublished = {Internet-Draft draft-fossati-seat-expat-03},
+  institution  = {Internet Engineering Task Force},
+  year         = {2026},
+  month        = jul,
+  url          = {https://datatracker.ietf.org/doc/draft-fossati-seat-expat/},
+  note         = {notes/specs/draft-fossati-seat-expat.md}
+}
+
+@misc{ietf2026seat,
+  author       = {{Internet Engineering Task Force}},
+  title        = {Secure Evidence and Attestation Transport ({SEAT}) Working Group Charter},
+  howpublished = {IETF Working Group},
+  year         = {2026},
+  url          = {https://datatracker.ietf.org/group/seat/about/},
+  note         = {notes/specs/seat-wg-charter.md. 設立年は未確認（year は参照した年）}
+}
+
+% ============================================================
+% 2026-08-21 追記（/survey: SSH の現行設計）
+% ============================================================
+
+@techreport{ylonen2006architecture,
+  author      = {Tatu Ylonen and Chris Lonvick},
+  title       = {The Secure Shell ({SSH}) Protocol Architecture},
+  number      = {RFC 4251},
+  type        = {RFC},
+  institution = {Internet Engineering Task Force},
+  year        = {2006},
+  month       = jan,
+  url         = {https://www.rfc-editor.org/info/rfc4251},
+  note        = {notes/specs/ssh-core-rfcs.md}
+}
+
+@techreport{ylonen2006transport,
+  author      = {Tatu Ylonen and Chris Lonvick},
+  title       = {The Secure Shell ({SSH}) Transport Layer Protocol},
+  number      = {RFC 4253},
+  type        = {RFC},
+  institution = {Internet Engineering Task Force},
+  year        = {2006},
+  month       = jan,
+  url         = {https://www.rfc-editor.org/info/rfc4253},
+  note        = {notes/specs/ssh-core-rfcs.md}
+}
+
+@techreport{ylonen2006auth,
+  author      = {Tatu Ylonen and Chris Lonvick},
+  title       = {The Secure Shell ({SSH}) Authentication Protocol},
+  number      = {RFC 4252},
+  type        = {RFC},
+  institution = {Internet Engineering Task Force},
+  year        = {2006},
+  month       = jan,
+  url         = {https://www.rfc-editor.org/info/rfc4252},
+  note        = {notes/specs/ssh-core-rfcs.md}
+}
+
+@techreport{ylonen2006connection,
+  author      = {Tatu Ylonen and Chris Lonvick},
+  title       = {The Secure Shell ({SSH}) Connection Protocol},
+  number      = {RFC 4254},
+  type        = {RFC},
+  institution = {Internet Engineering Task Force},
+  year        = {2006},
+  month       = jan,
+  url         = {https://www.rfc-editor.org/info/rfc4254},
+  note        = {notes/specs/ssh-core-rfcs.md}
+}
+
+@techreport{lehtinen2006numbers,
+  author      = {Sami Lehtinen and Chris Lonvick},
+  title       = {The Secure Shell ({SSH}) Protocol Assigned Numbers},
+  number      = {RFC 4250},
+  type        = {RFC},
+  institution = {Internet Engineering Task Force},
+  year        = {2006},
+  month       = jan,
+  url         = {https://www.rfc-editor.org/info/rfc4250},
+  note        = {notes/specs/ssh-core-rfcs.md}
+}
+
+@techreport{bider2018extinfo,
+  author      = {Denis Bider},
+  title       = {Extension Negotiation in the Secure Shell ({SSH}) Protocol},
+  number      = {RFC 8308},
+  type        = {RFC},
+  institution = {Internet Engineering Task Force},
+  year        = {2018},
+  month       = mar,
+  url         = {https://www.rfc-editor.org/info/rfc8308},
+  note        = {notes/specs/iana-ssh-registry-and-extension-points.md}
+}
+
+@techreport{yee2024registry,
+  author      = {Peter Yee},
+  title       = {Update to the {IANA} {SSH} Protocol Parameters Registry Requirements},
+  number      = {RFC 9519},
+  type        = {RFC},
+  institution = {Internet Engineering Task Force},
+  year        = {2024},
+  url         = {https://www.rfc-editor.org/info/rfc9519},
+  note        = {notes/specs/iana-ssh-registry-and-extension-points.md}
+}
+
+@techreport{miller2026agent,
+  author      = {Damien Miller},
+  title       = {Secure Shell ({SSH}) Agent Protocol},
+  number      = {RFC 9987},
+  type        = {RFC},
+  institution = {Internet Engineering Task Force},
+  year        = {2026},
+  month       = may,
+  url         = {https://www.rfc-editor.org/info/rfc9987},
+  note        = {notes/specs/ssh-core-rfcs.md}
+}
+
+@misc{miller2026sshcert,
+  author       = {Damien Miller},
+  title        = {{SSH} Certificate Format},
+  howpublished = {Internet-Draft draft-ietf-sshm-cert-01},
+  institution  = {Internet Engineering Task Force},
+  year         = {2026},
+  month        = jun,
+  url          = {https://datatracker.ietf.org/doc/draft-ietf-sshm-cert/},
+  note         = {notes/specs/draft-ietf-sshm-cert.md}
+}
+
+@misc{ietf2026sshm,
+  author       = {{Internet Engineering Task Force}},
+  title        = {Secure Shell Maintenance ({SSHM}) Working Group Charter},
+  howpublished = {IETF Working Group},
+  year         = {2026},
+  url          = {https://datatracker.ietf.org/group/sshm/about/},
+  note         = {notes/specs/sshm-wg.md. 設立年は未確認（year は参照した年）}
+}
+
+@misc{iana-ssh-parameters,
+  author       = {{Internet Assigned Numbers Authority}},
+  title        = {Secure Shell ({SSH}) Protocol Parameters},
+  howpublished = {IANA registry},
+  year         = {2026},
+  url          = {https://www.iana.org/assignments/ssh-parameters/ssh-parameters.xhtml},
+  note         = {notes/specs/iana-ssh-registry-and-extension-points.md. 参照日 2026-08-21}
+}

@@ -1,0 +1,13 @@
+# 改行コードは LF に固定する。
+# 複数 PC（OneDrive 同期）で作業するため、改行が揺れると全行 diff になり履歴が読めなくなる。
+
+* text=auto eol=lf
+
+*.md    text eol=lf
+*.jsonl text eol=lf
+*.json  text eol=lf
+*.bib   text eol=lf
+
+# state/seen.jsonl は追記専用（CLAUDE.md の規約）。
+# git に自動マージさせると既存行が動きうるので、競合時は必ず人間が解決する。
+state/seen.jsonl -merge
