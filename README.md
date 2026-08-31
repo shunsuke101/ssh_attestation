@@ -51,6 +51,48 @@ related-work/landscape.md   分野の分類マップと自分の立ち位置
 - **追記のみ**: `state/seen.jsonl`、`related-work/bibliography.bib` — 既存行を書き換えると既読判定と引用が壊れる
 - **消してよい**: `inbox/` — 生ログなので、`/digest` を回した後の古い月は消して構わない
 
+## 週次の自動収集
+
+毎週月曜 09:00 に Windows タスク スケジューラが `scripts/weekly-collect.ps1` を起動し、`/collect` を回して結果を GitHub に push する。
+
+```
+git pull --rebase  →  claude で収集  →  git add/commit  →  git push
+```
+
+タスク名は `ssh-attestation-weekly-collect`。
+
+### 手で回したいとき
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\weekly-collect.ps1              # 全カテゴリ
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\weekly-collect.ps1 -Category impl
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\weekly-collect.ps1 -DryRun      # claude を呼ばず git 経路だけ確認
+```
+
+### 動いているか確かめる
+
+```powershell
+Get-Content logs\last-run.txt                                  # 最終実行の結果
+Get-ScheduledTaskInfo -TaskName "ssh-attestation-weekly-collect"  # 次回実行時刻と前回の結果
+git log --oneline -5                                            # collect: のコミットが増えているか
+```
+
+`logs/` は git 管理外（ローカル確認用）。**2 週続けて `collect:` コミットが増えていなければ `logs\last-run.txt` を見ること。**
+
+### 設計上の約束ごと
+
+- **エージェントに git を触らせない。** `claude` は収集とファイル書き込みだけ。pull / commit / push はスクリプトが行う
+- `claude` は `--restricted` で起動するので、コマンド実行系のツールを持たず、ファイル操作はリポジトリ内に限定される。権限は `scripts/automation-settings.json` で与える
+- **`--restricted` はプロジェクトのスラッシュコマンドを解決しない。** そのためスクリプトは `.claude/commands/collect.md` の本文を読んでプロンプトとして直接渡す。収集の手順を変えるときは今まで通り `collect.md` だけを編集すればよい
+- 未コミットの手作業が残っていた場合は、収集前に `wip:` コミットとして退避してから進む。収集結果とは別コミットになる
+
+### 実行時刻を変える
+
+```powershell
+$t = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday -At 18:00
+Set-ScheduledTask -TaskName "ssh-attestation-weekly-collect" -Trigger $t
+```
+
 ## git 運用（OneDrive 内にリポジトリがあることの注意）
 
 このフォルダは git 管理下にあり、**同時に OneDrive の同期対象でもある**。同期の担当が二重になっているので、次のルールを守らないと `.git` が壊れる。

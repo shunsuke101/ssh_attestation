@@ -190,7 +190,7 @@ $prompt = $commandBody -replace '\$ARGUMENTS', $Category
 Write-Log "プロンプトを .claude/commands/collect.md から構築しました（$($prompt.Length) 文字）"
 
 if ($DryRun) {
-    Write-Log "DryRun のため claude は実行しません（実行予定: $prompt）" 'WARN'
+    Write-Log "DryRun のため claude は実行しません（プロンプト先頭: $(($prompt -split "`n" | Select-Object -First 1).Trim())…）" 'WARN'
     $claudeExit = 0
 } else {
     $settingsPath = Join-Path $PSScriptRoot 'automation-settings.json'
