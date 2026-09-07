@@ -10,16 +10,17 @@
 
 | 優先 | 名前 | URL / エンドポイント | 取得方法 | 最終確認日 |
 |---|---|---|---|---|
-| A | **arXiv 検索（推奨経路）** | `https://arxiv.org/search/?searchtype=all&query=<キーワード>&start=0` | WebFetch。**動作確認済 2026-08-21** | 2026-08-21 |
+| A | **arXiv 検索（推奨経路）** | `https://arxiv.org/search/?searchtype=all&query=<キーワード>&start=0` | WebFetch。**動作確認済 2026-09-07** | 2026-09-07 |
 | A | arXiv cs.CR 新着一覧 | `https://arxiv.org/list/cs.CR/recent` | WebFetch。**動作確認済 2026-08-21**（1 ページ 50 件） | 2026-08-21 |
 | B | arXiv export API | `https://export.arxiv.org/api/query?search_query=cat:cs.CR+AND+all:%22remote+attestation%22&sortBy=submittedDate&sortOrder=descending&max_results=50` | Atom XML。**2026-08-21 時点で WebFetch から 429 が返る**（下記注参照）。使えたときだけ使う | — |
-| A | IACR ePrint 新着 | `https://eprint.iacr.org/rss/rss.xml` / 検索は `https://eprint.iacr.org/search?q=attestation` | RSS + 検索。**検索は動作確認済 2026-08-21**（attestation で 215 件） | 2026-08-21 |
+| A | IACR ePrint 新着 | `https://eprint.iacr.org/rss/rss.xml` / 検索は `https://eprint.iacr.org/search?q=attestation` | RSS + 検索。**検索は動作確認済 2026-09-07**。ただし上位はほぼ ZK / ブロックチェーン / MPC で、SSH・TPM 系の収穫はほぼ無い。**優先 B に落としてよい** | 2026-09-07 |
 | B | USENIX Security 採録論文 | `https://www.usenix.org/conference/usenixsecurity<YY>/technical-sessions` | WebFetch。`<YY>` は開催年下 2 桁に読み替え | — |
 | B | NDSS 採録論文 | `https://www.ndss-symposium.org/ndss<YYYY>/accepted-papers/` | WebFetch。年次で URL が変わる | — |
 | B | ACM CCS 採録論文 | `https://www.sigsac.org/ccs/CCS<YYYY>/` から program へ | WebFetch。年次で構成が変わるので検索併用 | — |
 | B | IEEE S&P 採録論文 | `https://sp<YYYY>.ieee-security.org/` から program へ | WebFetch。同上 | — |
-| B | 汎用 Web 検索 | — | WebSearch で `docs/scope.md` のキーワードを回す。**2026-08-21 の初回で最も収穫が大きかった経路**（GitHub の実装 2 件はこれで発見） | 2026-08-21 |
+| B | 汎用 Web 検索 | — | WebSearch で `docs/scope.md` のキーワードを回す。**2026-08-21 の初回で最も収穫が大きかった経路**（GitHub の実装 2 件はこれで発見）。2026-09-07 は**米国特許 11165861（SSH サーバ認証時に完全性情報を送る方式）**を拾った。**特許は他経路に一切出てこないので Web 検索は必須** | 2026-09-07 |
 | C | ACM DL / IEEE Xplore | `https://dl.acm.org/`, `https://ieeexplore.ieee.org/` | 検索 UI が JS 依存で取りにくい。WebSearch 経由で当たる方が確実 | — |
+| B | **米国特許（先行技術）** | `https://ppubs.uspto.gov/` / 実体 PDF は `https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/<特許番号>` | WebSearch で `SSH attestation patent` 等を回して番号を拾い、PDF で一次確認。**2026-09-07 に US 11165861 を発見**（SSH サーバ認証時に完全性情報を送る方式）。**論文の先行技術調査に必須だが他の巡回先には一切出てこない**。PDF 取得は失敗することがある | 2026-09-07 |
 
 **注 1（arXiv）**: `export.arxiv.org` の API は共有 IP からのアクセスとみなされ **429 Too Many Requests** で弾かれることがある（2026-08-21 に確認）。**通常は `arxiv.org/search/` の HTML 検索を使う。** キーワード検索・新着一覧ともこちらで問題なく取得できる。API は取れたら儲けもの、程度に扱う。
 
@@ -31,13 +32,13 @@
 
 | 優先 | 名前 | URL / エンドポイント | 取得方法 | 最終確認日 |
 |---|---|---|---|---|
-| **A** | **IETF SSHM WG 文書一覧** | `https://datatracker.ietf.org/wg/sshm/documents/` | WebFetch。**最重要**。SSH を現に保守・拡張している WG。**動作確認済 2026-08-21** | 2026-08-21 |
-| **A** | **sshm@ietf.org ML** | `https://mailarchive.ietf.org/arch/browse/sshm/` | WebFetch。**SSH に attestation / TPM の話題が出たことがあるか**を確認する（未巡回） | — |
+| **A** | **IETF SSHM WG 文書一覧** | `https://datatracker.ietf.org/wg/sshm/documents/` | WebFetch。**最重要**。SSH を現に保守・拡張している WG。**動作確認済 2026-09-07** | 2026-09-07 |
+| **A** | **sshm@ietf.org ML** | `https://mailarchive.ietf.org/arch/browse/sshm/` | WebFetch。**SSH に attestation / TPM の話題が出たことがあるか**を確認する。**2026-09-07 に 2 経路とも失敗**（`/arch/browse/sshm/` → 404、`/arch/search/?email_list=sshm` → 403）。**依然未巡回。** 次回は datatracker の WG ページ内のアーカイブリンクを辿ること | — |
 | **A** | **IANA SSH Protocol Parameters** | `https://www.iana.org/assignments/ssh-parameters/ssh-parameters.xhtml` | WebFetch。メッセージ番号の空き枠と拡張名の登録状況。**拡張設計の一次情報。動作確認済 2026-08-21** | 2026-08-21 |
-| **A** | **IETF SEAT WG 文書一覧** | `https://datatracker.ietf.org/wg/seat/documents/` | WebFetch。**最重要**。attestation を (D)TLS に束縛する WG。本研究の直接の隣接領域 | — |
+| **A** | **IETF SEAT WG 文書一覧** | `https://datatracker.ietf.org/wg/seat/documents/` | WebFetch。**最重要**。attestation を (D)TLS に束縛する WG。本研究の直接の隣接領域。**動作確認済 2026-09-07**（WG doc 1 本 + 関連 individual draft 7 本。2026-09-07 の `high` 5 件中 4 件がここ由来。**最も収穫の大きい巡回先**） | 2026-09-07 |
 | **A** | **IETF SEAT WG 憲章** | `https://datatracker.ietf.org/group/seat/about/` | WebFetch。**動作確認済 2026-08-21** | 2026-08-21 |
-| **A** | **seat@ietf.org ML** | `https://mailarchive.ietf.org/arch/browse/seat/` | WebFetch。**SSH への適用が議論されたことがあるかを確認する**（未巡回） | — |
-| A | IETF RATS WG 文書一覧 | `https://datatracker.ietf.org/wg/rats/documents/` | WebFetch。**動作確認済 2026-08-21**（RFC 8 本 + 現行 I-D 11 本） | 2026-08-21 |
+| **A** | **seat@ietf.org ML** | `https://mailarchive.ietf.org/arch/browse/seat/` | WebFetch。**動作確認済 2026-09-07**。直近 40 通に **SSH / Secure Shell の言及なし**（議論は TLS 1.3 に集中）。ただし "Evidence relay and substitution attack" と "Threat model for attested TLS" のスレッドは問い 4 に直結 | 2026-09-07 |
+| A | IETF RATS WG 文書一覧 | `https://datatracker.ietf.org/wg/rats/documents/` | WebFetch。**動作確認済 2026-09-07** | 2026-09-07 |
 | A | IETF datatracker 検索（attestation） | `https://datatracker.ietf.org/api/v1/doc/document/?name__contains=attestation&format=json&limit=50` | API (JSON)。**動作確認済 2026-08-21**（該当 184 件） | 2026-08-21 |
 | A | IETF datatracker 検索（ssh） | `https://datatracker.ietf.org/api/v1/doc/document/?name__contains=ssh&format=json&limit=50` | API (JSON) | — |
 | B | IETF secsh / SSH 関連 WG | `https://datatracker.ietf.org/wg/#sec` から SSH 関連を辿る | WebFetch。secsh WG は終了済みだが個人 I-D が出る | — |
@@ -57,14 +58,14 @@
 
 | 優先 | 名前 | URL / エンドポイント | 取得方法 | 最終確認日 |
 |---|---|---|---|---|
-| A | OpenSSH リリースノート | `https://www.openssh.org/releasenotes.html` | WebFetch。**`openssh.com` は `openssh.org` に 301 するので `.org` を直接叩く**。動作確認済 2026-08-31（最新は依然 10.5 / 2026-08-11） | 2026-08-31 |
+| A | OpenSSH リリースノート | `https://www.openssh.org/releasenotes.html` | WebFetch。**`openssh.com` は `openssh.org` に 301 するので `.org` を直接叩く**。動作確認済 2026-09-07（最新は依然 10.5p1 / 2026-08-11） | 2026-09-07 |
 | A | openssh-unix-dev ML | `https://marc.info/?l=openssh-unix-dev` | WebFetch。attestation / TPM / FIDO 関連スレのみ拾う。**2026-08-31 に失敗**（トップは月別インデックスのみでスレッド件名が出ない）。月別ページを直接叩く経路を次回試す | — |
 | B | OpenSSH PROTOCOL 系ファイル | `https://raw.githubusercontent.com/openssh/openssh-portable/master/PROTOCOL{,.u2f,.agent,.sshsig,.key,.krl,.mux}` | raw を WebFetch。**動作確認済 2026-08-21**。de facto 標準の一次情報。ファイル一覧は `https://api.github.com/repos/openssh/openssh-portable/contents/` で確認 | 2026-08-21 |
-| A | ssh-tpm-agent | `https://api.github.com/repos/Foxboron/ssh-tpm-agent/releases` | GitHub API。**動作確認済 2026-08-31**（最新は依然 v0.9.0 / 2026-05-04） | 2026-08-31 |
-| B | go-attestation | `https://api.github.com/repos/google/go-attestation/releases` | GitHub API。**動作確認済 2026-08-31**（最新 v0.6.4 / 2026-08-11。リリース頻度が高く当たりが良い） | 2026-08-31 |
+| A | ssh-tpm-agent | `https://api.github.com/repos/Foxboron/ssh-tpm-agent/releases` | GitHub API。**動作確認済 2026-09-07**（最新は依然 v0.9.0 / 2026-05-04。4 ヶ月動きなし） | 2026-09-07 |
+| B | go-attestation | `https://api.github.com/repos/google/go-attestation/releases` | GitHub API。**動作確認済 2026-09-07**（最新は依然 v0.6.4 / 2026-08-11。リリース頻度が高く当たりが良い） | 2026-09-07 |
 | B | Keylime | `https://api.github.com/repos/keylime/keylime/releases` | GitHub API。**動作確認済 2026-08-31**（最新 v7.14.3 / 2026-07-06） | 2026-08-31 |
 | B | Parsec | `https://api.github.com/repos/parallaxsecond/parsec/releases` | GitHub API。**動作確認済 2026-08-31**。リリースが年 1 回程度で内容も依存更新中心。C に落としてよい | 2026-08-31 |
-| B | GitHub 横断検索 | `https://api.github.com/search/repositories?q=ssh+attestation+in:name,description&sort=stars&order=desc` | GitHub API。新規プロジェクトの発見用。**`in:readme` と `sort=updated` は使わない**（下記注）。2026-08-31 は 12 件ヒットし新規 6 件を拾えた | 2026-08-31 |
+| B | GitHub 横断検索 | `https://api.github.com/search/repositories?q=ssh+attestation+in:name,description&sort=stars&order=desc` | GitHub API。新規プロジェクトの発見用。**`in:readme` と `sort=updated` は使わない**（下記注）。2026-08-31 は 12 件ヒットし新規 6 件。**2026-09-07 も同じ 12 件で新規ゼロ**（＝この検索式は飽和した。月 1 回で足りるので C に落としてよい） | 2026-09-07 |
 | C | tpm2-software | `https://api.github.com/repos/tpm2-software/tpm2-tools/releases` | GitHub API。**動作確認済 2026-08-31**（最新 5.8 / 2026-07-15）。内容は CVE 修正中心で attestation の新機能は出にくい | 2026-08-31 |
 | C | Linux IMA / integrity | `https://lore.kernel.org/linux-integrity/` | WebFetch。カーネル側の動き。**2026-08-31 に Access Denied で取得不可**。代替経路（`https://lore.kernel.org/linux-integrity/new.atom` 等）を次回試す | — |
 | C | sigstore | `https://api.github.com/repos/sigstore/sigstore/releases` | GitHub API。署名検証モデルの参考。**動作確認済 2026-08-31**（最新 v1.10.9 / 2026-08-03）。内容は KMS / TUF まわりで attestation とは無関係。収穫が薄い | 2026-08-31 |
@@ -81,8 +82,8 @@
 
 | 優先 | 名前 | URL | 取得方法 | 最終確認日 |
 |---|---|---|---|---|
-| B | Teleport ブログ | `https://goteleport.com/blog/` | WebFetch。Device Trust / Machine ID が近い。**トップページには device trust 記事が出ないので、タグページ `https://goteleport.com/blog/tags/device-trust/` を直接見る方が良い**（次回試す） | 2026-08-21 |
-| B | Tailscale ブログ | `https://tailscale.com/blog` | WebFetch。Tailscale SSH, device posture | 2026-08-21 |
+| B | Teleport ブログ | `https://goteleport.com/blog/` | WebFetch。Device Trust / Machine ID が近い。**タグページ `https://goteleport.com/blog/tags/device-trust/` は 2026-09-07 に 404**（前回メモの「次回試す」は不発）。タグ URL の形式を再確認するか、トップの一覧に戻すこと | — |
+| B | Tailscale ブログ | `https://tailscale.com/blog` | WebFetch。Tailscale SSH, device posture。**動作確認済 2026-09-07**（8 月分は PAM beta 等で attestation の技術的中身なし） | 2026-09-07 |
 | C | HashiCorp ブログ | `https://www.hashicorp.com/blog` | WebFetch。Boundary 関連のみ | — |
 | C | Google Cloud Confidential Computing | `https://cloud.google.com/blog/products/identity-security` | WebFetch | — |
 | C | AWS Nitro Enclaves | `https://aws.amazon.com/blogs/security/` | WebFetch。attestation document 関連 | — |
