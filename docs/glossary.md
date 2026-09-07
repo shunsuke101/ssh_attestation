@@ -9,9 +9,9 @@ RATS のアーキテクチャ用語は**訳さず英語のまま**使う。訳�
 
 | 用語 | 意味 | 本研究での対応物（想定） |
 |---|---|---|
-| **Attester** | Evidence を生成する主体 | attestation する側の SSH ホスト（またはクライアント端末） |
-| **Verifier** | Evidence を Appraisal Policy に照らして評価し、Attestation Result を出す | SSH クライアント自身、または独立した検証サービス |
-| **Relying Party** | Attestation Result を受けて、アクセス可否などを判断する | SSH クライアント（接続するか否かを決める） |
+| **Attester** | Evidence を生成する主体 | attestation する側の SSH クライアント（またはクライアント端末） |
+| **Verifier** | Evidence を Appraisal Policy に照らして評価し、Attestation Result を出す | SSH サーバー自身、または独立した検証サービス |
+| **Relying Party** | Attestation Result を受けて、アクセス可否などを判断する | SSH サーバー（接続するか否かを決める） |
 | **Endorser** | Attester のハードウェアの真正性を保証する（製造者など） | TPM ベンダ、EK 証明書の発行者 |
 | **Reference Value Provider** | 「正しい状態」の基準値を提供する | OS ディストリビュータ、自組織のビルドシステム |
 | **Evidence** | Attester が出す主張（PCR quote など） | TPM Quote + イベントログ |
