@@ -53,7 +53,7 @@ related-work/landscape.md   分野の分類マップと自分の立ち位置
 
 ## 週次の自動収集
 
-毎週月曜 09:00 に Windows タスク スケジューラが `scripts/weekly-collect.ps1` を起動し、`/collect` を回して結果を GitHub に push する。
+毎週月曜 10:30 に Windows タスク スケジューラが `scripts/weekly-collect.ps1` を起動し、`/collect` を回して結果を GitHub に push する。
 
 ```
 git pull --rebase  →  claude で収集  →  git add/commit  →  git push
@@ -89,7 +89,7 @@ git log --oneline -5                                            # collect: の�
 ### 実行時刻を変える
 
 ```powershell
-$t = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday -At 18:00
+$t = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday -At 14:00
 Set-ScheduledTask -TaskName "ssh-attestation-weekly-collect" -Trigger $t
 ```
 
