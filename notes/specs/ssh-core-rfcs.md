@@ -12,18 +12,25 @@ added: 2026-08-21
 ---
 
 > **このノートは SSH 中核仕様群の地図。** 個別 RFC の詳細ではなく「何がどこに書いてあるか」「何がそれを更新したか」を引くための索引として使う。
+> **2026-09-09: 5 本すべてと RFC 4256 の個別ノートを起こした（下表の「ノート」列）。詳細はそちらへ。**
 
 ## 中核 5 本（すべて 2006-01、すべて Proposed Standard）
 
 著者はいずれも T. Ylonen と C. Lonvick (Ed.)（RFC 4250 のみ S. Lehtinen と C. Lonvick (Ed.)）。
 
-| RFC | タイトル | 役割 | Updated by |
+| RFC | タイトル | 役割 | Updated by | ノート |
+|---|---|---|---|---|
+| **4250** | The Secure Shell (SSH) Protocol Assigned Numbers | IANA レジストリの初期状態とメッセージ番号の割り当て | 8268, 9142, 9519 | [[rfc4250-ssh-assigned-numbers]] |
+| **4251** | The Secure Shell (SSH) Protocol Architecture | 3 層アーキテクチャ、用語、データ表現、アルゴリズム命名規則、Security Considerations | 8308, 9141 | [[rfc4251-ssh-architecture]] |
+| **4252** | The Secure Shell (SSH) Authentication Protocol | ユーザ認証の枠組みと publickey / password / hostbased の 3 方式 | 8308, 8332 | [[rfc4252-ssh-authentication-protocol]] |
+| **4253** | The Secure Shell (SSH) Transport Layer Protocol | 暗号化・サーバ認証・完全性、アルゴリズム交渉、DH 鍵交換 | 6668, 8268, 8308, 8332, 8709, 8758, 9142 | [[rfc4253-ssh-transport-layer]] |
+| **4254** | The Secure Shell (SSH) Connection Protocol | チャネル多重化、対話ログイン、ポート転送、X11 転送 | 8308 | [[rfc4254-ssh-connection-protocol]] |
+
+### 中核 5 本に含まれないが実質的に必須
+
+| RFC | タイトル | 役割 | ノート |
 |---|---|---|---|
-| **4250** | The Secure Shell (SSH) Protocol Assigned Numbers | IANA レジストリの初期状態とメッセージ番号の割り当て | 8268, 9142, 9519 |
-| **4251** | The Secure Shell (SSH) Protocol Architecture | 3 層アーキテクチャ、用語、データ表現、アルゴリズム命名規則、Security Considerations | 8308, 9141 |
-| **4252** | The Secure Shell (SSH) Authentication Protocol | ユーザ認証の枠組みと publickey / password / hostbased の 3 方式 | 8308, 8332 |
-| **4253** | The Secure Shell (SSH) Transport Layer Protocol | 暗号化・サーバ認証・完全性、アルゴリズム交渉、DH 鍵交換 | 6668, 8268, 8308, 8332, 8709, 8758, 9142 |
-| **4254** | The Secure Shell (SSH) Connection Protocol | チャネル多重化、対話ログイン、ポート転送、X11 転送 | 8308 |
+| **4256** | Generic Message Exchange Authentication for the Secure Shell Protocol (SSH) | ユーザ認証方式 `keyboard-interactive`。**SSH で唯一の汎用チャレンジ・レスポンス機構**。著者は F. Cusack, M. Forssen | [[rfc4256-keyboard-interactive]] |
 
 **いずれも Obsoleted by は無い。** 20 年前の仕様が現役のまま、更新 RFC を積み重ねる形で維持されている。
 
@@ -65,6 +72,8 @@ RFC 4253 を更新する **6668, 8268, 8332, 8709, 8758**、RFC 4251 を更新�
 
 ## 未解決・気になる点
 
-- RFC 4251 の Security Considerations は TOFU について何と書いているか（原文精読が要る。**論文で「仕様自身が TOFU の限界を認めている」と引けるかどうかが懸かる**）
-- RFC 9141 が RFC 4251 の何を更新したか
-- ホスト鍵の検証方法について RFC 4251/4253 はどこまで規定し、どこから実装依存か
+- ~~RFC 4251 の Security Considerations は TOFU について何と書いているか~~ → **2026-09-09 解決。引ける。** §9.3.4 に `the use of this protocol without a reliable association of the binding between a host and its host keys is inherently insecure and is NOT RECOMMENDED` とあり、§4.1 は TOFU を採った理由（鍵基盤が存在しないから）まで自白している。さらに §9.3.4 は `future extensions to the protocol may provide better mechanisms` と拡張を予告している。詳細は [[rfc4251-ssh-architecture]]
+- ~~ホスト鍵の検証方法について RFC 4251/4253 はどこまで規定し、どこから実装依存か~~ → **2026-09-09 解決。** RFC 4251 §4.1 が信頼モデルを 2 つ（ローカル DB / CA）提示し、無検証も明示的に許容する。RFC 4253 §8 step 3 が実行地点（`C is also allowed to accept the key without verification`）。**どちらも「どう検証するか」は実装依存**で、新しい検証方法の追加は仕様の範囲内
+- RFC 9141 が RFC 4251 の何を更新したか（未着手）
+- RFC 4253 を更新する 6668, 8268, 8332, 8709, 8758 が未取得（[[rfc4253-ssh-transport-layer]] にも記載）
+- **RFC 4252 §6 と RFC 4256 の食い違い**（60–79 をクライアントが送れるか）。実装は RFC 4256 に従っている → [[rfc4256-keyboard-interactive]]
