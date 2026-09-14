@@ -5,7 +5,15 @@
 SSH に **attestation（機器証明 / リモート認証）** 機能を実現する研究。
 現行 SSH のホスト認証は TOFU（Trust On First Use）と静的な公開鍵に依存しており、「接続先ホストが本当に期待した状態のソフトウェア／ハードウェアで動いているか」を検証できない。TPM 等のハードウェア信頼点と RATS（RFC 9334）系の attestation 手続きを SSH プロトコルに統合することが狙い。
 
-このフォルダは **その研究テーマの情報収集・蓄積基盤** であり、実装コードのリポジトリではない。
+## このリポジトリについて
+
+repositry URL:https://github.com/shunsuke101/ssh_attestation/tree/main
+このリポジトリは **その研究テーマの情報収集・蓄積基盤** であり、実装コードのリポジトリではない。
+
+## 実装コードのリポジトリについて
+
+repositry URL:https://github.com/shunsuke101/openssh-portable
+このリポジトリは、openssh-portableをforkして、研究テーマに沿った実装をしようとしています。
 
 ## 記述ルール
 
