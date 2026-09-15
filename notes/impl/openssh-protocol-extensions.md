@@ -81,7 +81,7 @@ OpenSSH は FIDO/U2F セキュリティキー（`sk-ecdsa-sha2-nistp256@openssh.
 
 1. attestation データを**運ぶ**ことはできる（enrollment 時に保存できる）
 2. しかし**検証しない**（Verifier が存在しない）
-3. しかも対象は**クライアント側の鍵がハードウェア由来か**であって、**ホストの状態**ではない
+3. しかも対象は**クライアント側の鍵がハードウェア由来か**（鍵の常駐性）であって、**クライアント端末の状態**（PCR / measured boot）ではない
 
 `/collect` で見つけた OpenSSH 10.0 のリリースノート「a work-in-progress tool to verify FIDO attestation blobs」と合わせると、**OpenSSH は運搬はできるが検証は未着手、という状態**が確認できる。
 
@@ -91,7 +91,7 @@ OpenSSH は FIDO/U2F セキュリティキー（`sk-ecdsa-sha2-nistp256@openssh.
 
 `PROTOCOL.u2f` は attestation のプライバシー問題（製造者・バッチ単位でトークンが識別できる）を理由に、**既定で attestation を保存しない**という設計判断を下している。
 
-**ホスト attestation を提案するとき、同じ反論が来る。** DAA（→ `draft-ietf-rats-daa`）や Privacy CA を設計に組み込んでおく必要がある。OpenSSH が既にこの理由で機能を絞っている以上、プライバシーへの回答なしに提案は通らない。
+**クライアント端末の attestation を提案するとき、同じ反論が来る。しかも対象が個人の端末なので、ルータやサーバーより反論は強くなる。** DAA（→ `draft-ietf-rats-daa`）や Privacy CA を設計に組み込んでおく必要がある。OpenSSH が既にこの理由で機能を絞っている以上、プライバシーへの回答なしに提案は通らない。
 
 ### 借用できる部分
 
@@ -102,10 +102,10 @@ OpenSSH は FIDO/U2F セキュリティキー（`sk-ecdsa-sha2-nistp256@openssh.
 
 ### この実装が**やっていない**こと（＝貢献余地）
 
-1. ホスト側の platform attestation が一切ない
+1. クライアント端末の platform attestation（PCR 等の状態）が一切ない
 2. attestation データの**解釈・検証**がない（opaque 扱い）
 3. Reference Value / Appraisal Policy の概念がない
-4. TOFU はそのまま
+4. 接続時に server が challenge を送り、client が attestation で応答する往復がない（FIDO の attestation は enrollment 時の一度きり）
 
 ## 動かすなら
 

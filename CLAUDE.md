@@ -3,7 +3,23 @@
 ## 研究テーマ
 
 SSH に **attestation（機器証明 / リモート認証）** 機能を実現する研究。
-現行 SSH のホスト認証は TOFU（Trust On First Use）と静的な公開鍵に依存しており、「接続先ホストが本当に期待した状態のソフトウェア／ハードウェアで動いているか」を検証できない。TPM 等のハードウェア信頼点と RATS（RFC 9334）系の attestation 手続きを SSH プロトコルに統合することが狙い。
+
+**attestation をクライアント認証に拡張する。** 現行 SSH のクライアント認証（publickey 等）は「誰が鍵を持っているか」しか証明せず、接続元の端末が期待した状態のソフトウェア／ハードウェアで動いているかをサーバーは検証できない。そこで challenge-response 型の remote attestation を SSH に組み込む。
+
+- **server からの challenge** によって、attestation の freshness を担保する
+- **client からの response**（TPM Quote 等の Evidence）によって、client の完全性を server が保証する
+
+RATS の役割では **Attester = SSH クライアント、Verifier / Relying Party = SSH サーバー**。
+
+### 設計の土台
+
+以下 3 つに基づいて、challenge-response の remote attestation を設計している。
+
+| 文書 | 設計で使う部分 | ノート |
+|---|---|---|
+| RFC 9334 "Remote ATtestation procedureS (RATS) Architecture" | 役割（Attester / Verifier / Relying Party）と Conceptual Message の枠組み | `notes/specs/rfc9334-rats-architecture.md` |
+| RFC 9683 "Remote Integrity Verification of Network Devices Containing Trusted Platform Modules" | TPM ベースの Evidence（PCR Quote、DevID / AK の鍵構成）と Verifier の判定条件 | `notes/specs/rfc9683-riv-tpm-network-devices.md` |
+| draft-ietf-rats-reference-interaction-models "Reference Interaction Models for Remote Attestation Procedures" | Challenge/Response Remote Attestation の相互作用モデル（Handle による freshness） | `notes/specs/draft-ietf-rats-reference-interaction-models.md` |
 
 ## このリポジトリについて
 

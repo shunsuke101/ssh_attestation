@@ -5,23 +5,31 @@
 
 ## 研究テーマ
 
-SSH に attestation（機器証明）機能を実現する。
+SSH に attestation（機器証明）機能を実現する。**attestation をクライアント認証に拡張する。**
 
-現行 SSH のホスト認証は TOFU（Trust On First Use）と静的なホスト鍵に依存する。鍵の所持は証明できても、**接続先ホストが期待した状態のソフトウェア／ハードウェアで動いているか**は検証できない。ホスト鍵が盗まれれば、あるいはホストが改竄されていれば、クライアントは気づけない。
+現行 SSH のクライアント認証（`publickey` 等）は鍵の所持しか証明しない。仕様自身が `The use of public key authentication assumes that the client host has not been compromised.`（RFC 4251 §9.4.4）と書いている通り、**接続元の端末が期待した状態のソフトウェア／ハードウェアで動いているか**をサーバーは検証できない。鍵が盗まれれば、あるいは端末が改竄されていれば、サーバーは気づけない。
 
-そこで TPM 等のハードウェア信頼点と RATS（RFC 9334）系の attestation 手続きを SSH プロトコルに統合し、**「誰が鍵を持っているか」から「どんな状態のマシンが鍵を持っているか、正常なソフトウェアとハードウェアが動作しているか」へ**認証の意味を拡張する。
+そこで TPM 等のハードウェア信頼点を使った challenge-response 型の remote attestation を SSH のクライアント認証に組み込み、**「誰が鍵を持っているか」から「どんな状態の端末が鍵を持っているか」へ**認証の意味を拡張する。
+
+- **server からの challenge** によって、attestation の freshness を担保する
+- **client からの response**（TPM Quote 等の Evidence）によって、client の完全性を server が保証する
+
+RATS の役割では Attester = SSH クライアント、Verifier / Relying Party = SSH サーバー。設計の土台は RFC 9334（RATS Architecture）、RFC 9683（TPM ベースの Remote Integrity Verification）、draft-ietf-rats-reference-interaction-models（Challenge/Response Remote Attestation）。
 
 ### 中心的な問い
 
-1. attestation Evidence を SSH のどのレイヤで運ぶか（トランスポート層の鍵交換 / ユーザ認証 / 新規チャネル / SSH 証明書の拡張フィールド）
+1. server の challenge と client の Evidence を SSH のどのレイヤで運ぶか（ユーザ認証の新方式 / トランスポート層の鍵交換・`SSH_MSG_EXT_INFO` / 新規チャネル・グローバル要求 / SSH ユーザ証明書の拡張フィールド）
 2. 既存 OpenSSH との後方互換性・段階的導入をどう担保するか
 3. Verifier をどこに置くか（サーバー自身 / 独立した検証サービス / CA 兼務）
-4. Freshness をどう保証するか（nonce の運び方、セッション束縛、再生攻撃対策、タイムスタンプ）
+4. Freshness をどう保証するか（server challenge の生成と運び方、SSH セッションへの束縛、再生攻撃対策、タイムスタンプ）
 5. 検証コストとハンドシェイクのレイテンシ、大規模運用時の Reference Value 管理
 
-### 対称性のメモ
+### 方向のメモ
 
-attestation は**サーバ→クライアント**（接続先ホストは正しい状態か）と**クライアント→サーバ**（接続元端末は正しい状態か、＝ device trust）の両方向がある。どちらも収集対象。後者は商用製品が先行しているので `industry` カテゴリで拾えることが多い。
+attestation には**クライアント→サーバー**（接続元端末は正しい状態か、＝ device trust）と**サーバー→クライアント**（接続先ホストは正しい状態か）の両方向がある。**本研究の対象は前者**。
+
+- クライアント→サーバー: 本研究の対象。商用製品（device trust）が先行しているので `industry` カテゴリで拾えることが多い
+- サーバー→クライアント（ホスト attestation、TOFU の置き換え）: 対象外。ただし SSH への attestation 統合という点で設計が参考になるので、**対比用に `medium` 以下で**拾う
 
 ---
 
@@ -35,9 +43,9 @@ attestation は**サーバ→クライアント**（接続先ホストは正し�
 SSH attestation
 remote attestation SSH
 TPM-backed SSH key
-attested SSH host key
-hardware-rooted host authentication
-SSH host key trust on first use replacement
+SSH client attestation
+device attestation SSH client authentication
+TPM quote SSH user authentication
 ```
 
 ### 隣接領域（ローテーションで回す）
@@ -50,6 +58,9 @@ attestation evidence appraisal policy
 reference values RIM CoRIM
 background-check model attestation
 passport model attestation
+challenge-response remote attestation
+reference interaction models remote attestation
+remote integrity verification TPM
 ```
 
 **ハードウェア信頼点**
@@ -83,6 +94,14 @@ channel binding attestation
 freshness nonce attestation replay
 attestation privacy DAA anonymous attestation
 sshの詳細な設計
+```
+
+**逆方向（対比用。`medium` 以下で拾う）**
+```
+attested SSH host key
+hardware-rooted host authentication
+SSH host key trust on first use replacement
+```
 
 ### 検索式の組み方
 
@@ -99,7 +118,7 @@ Web 検索は `"SSH" AND ("remote attestation" OR "TPM")` のように**中核�
 - **ブロックチェーン文脈の "attestation"** — EAS（Ethereum Attestation Service）、検証可能クレデンシャル、on-chain attestation。語が同じだけで別分野。
 - **監査・コンプライアンス文脈の "attestation"** — SOC 2 attestation、会計監査。完全に別語義。
 - **ベンダのマーケティング記事** — 技術的中身（プロトコル、脅威モデル、実装、評価）が無い製品紹介。ただし**新機能の初出リリース**は `industry` として拾う。
-- **CVE / 脆弱性速報** — 単発の SSH 脆弱性は、attestation で緩和できる類のもの（ホスト鍵漏洩、サプライチェーン改竄）でない限り対象外。
+- **CVE / 脆弱性速報** — 単発の SSH 脆弱性は、attestation で緩和できる類のもの（クライアント鍵の窃取、クライアント端末の改竄、サプライチェーン改竄）でない限り対象外。
 - **既知の教科書的内容** — RFC 4251〜4254（SSH 基本仕様）の解説など。仕様そのものは `notes/specs/` に一度置けば十分。
 
 ### 判断に迷ったら
@@ -123,4 +142,4 @@ Web 検索は `"SSH" AND ("remote attestation" OR "TPM")` のように**中核�
 ## 時間範囲
 
 - 定期収集は**前回の `/collect` 以降**の新着が対象（`state/seen.jsonl` で判定）。
-- 初回のみ、過去に遡って基礎文献を拾う。目安は **2019 年以降**。ただし RFC 9334（RATS Architecture）、TPM 2.0 仕様、RFC 4251〜4254 のような**土台となる文献は年に関係なく拾う**。
+- 初回のみ、過去に遡って基礎文献を拾う。目安は **2019 年以降**。ただし RFC 9334（RATS Architecture）、RFC 9683（TPM ベースの Remote Integrity Verification）、Reference Interaction Models for Remote Attestation Procedures、TPM 2.0 仕様、RFC 4251〜4254 のような**土台となる文献は年に関係なく拾う**。

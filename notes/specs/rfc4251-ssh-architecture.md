@@ -13,12 +13,13 @@ added: 2026-09-09
 
 > 中核 5 本の全体像は [[ssh-core-rfcs]]（地図）を参照。本ノートは RFC 4251 単体の精読。
 > **[[ssh-core-rfcs]] に残っていた宿題「RFC 4251 の Security Considerations は TOFU について何と書いているか」への回答を含む。**
+> **2026-09-15: 研究テーマを「attestation をクライアント認証に拡張する」に改めたのに合わせ、§9.4 を精読して解釈を組み替えた。** 本研究の動機の一次出典は §9.4.4 / §9.4.6。TOFU を扱う §4.1 / §9.3.4 はサーバー認証側の話で、対比として使う。
 
 ## 何を規定しているか
 
 SSH の**アーキテクチャ文書**（2006-01）。著者は T. Ylonen と C. Lonvick (Ed.)。3 層構造（Transport / User Authentication / Connection）、ホスト鍵の信頼モデル、拡張性の設計方針、データ型の表現、アルゴリズム命名規則、そして 14 ページに及ぶ Security Considerations を規定する。
 
-具体的なパケット形式は一切定義せず、それらは RFC 4252 / 4253 / 4254 に分かれている。**本研究にとっては「なぜ SSH のホスト認証が TOFU なのか」を仕様自身の言葉で説明している唯一の文書**。
+具体的なパケット形式は一切定義せず、それらは RFC 4252 / 4253 / 4254 に分かれている。**本研究にとっては、SSH のクライアント認証が「端末が侵害されていないこと」を前提にしていると仕様自身の言葉で書いている文書**（§9.4.4, §9.4.6）。あわせて、サーバー認証側で TOFU を採った理由も説明している（§4.1, §9.3.4）。
 
 ## 本研究に効く定義・要件
 
@@ -47,13 +48,35 @@ TOFU の具体的な実装戦略（初回は無検証で受け入れ、ローカ
 
 > In summary, the use of this protocol without a reliable association of the binding between a host and its host keys is inherently insecure and is NOT RECOMMENDED. — §9.3.4
 
-同節は MITM を 3 ケースに分けて論じる。第 1（セッション開始前に装置を挟む）、第 2（**サーバ公開鍵が安全に配布されていない場合**、ソーシャルエンジニアリングで偽鍵を掴ませられる）、第 3（確立後のパケット改竄——MAC が健全なら現実的でない）。**第 2 ケースこそが本研究の対象**である。
+同節は MITM を 3 ケースに分けて論じる。第 1（セッション開始前に装置を挟む）、第 2（**サーバ公開鍵が安全に配布されていない場合**、ソーシャルエンジニアリングで偽鍵を掴ませられる）、第 3（確立後のパケット改竄——MAC が健全なら現実的でない）。いずれも**サーバー認証側**の問題で、本研究（クライアント認証への attestation）の対象ではない。
 
-そして次の一文が、本研究を仕様の延長線上に位置づける根拠になる:
+さらに、仕様は拡張による改善を予告している:
 
 > Because the protocol is extensible, future extensions to the protocol may provide better mechanisms for dealing with the need to know the server's host key before connecting. — §9.3.4
 
-例として挙がっているのは secure DNS 経由のフィンガープリント公開と、鍵交換時の Kerberos/GSS-API によるサーバ認証。**attestation はここに並ぶ第 3 の答えとして提案できる。**
+例として挙がっているのは secure DNS 経由のフィンガープリント公開と、鍵交換時の Kerberos/GSS-API によるサーバ認証。**この一文はサーバーのホスト鍵についてのものなので、本研究の根拠として引くと誤引用になる。** 「SSH は拡張で認証を強化することを想定した設計である」という一般的な文脈でのみ使う。
+
+### §9.4 Authentication Protocol — 本研究の動機の一次出典
+
+ユーザ認証プロトコルの Security Considerations。まず前提として:
+
+> The purpose of this protocol is to perform client user authentication. It assumes that this runs over a secure transport layer protocol, which has already authenticated the server machine, established an encrypted communications channel, and computed a unique session identifier for this session. — §9.4
+
+認証方式の組み合わせはサーバーのローカルポリシーに委ねられ、`Authentication is no stronger than the weakest combination allowed.` とされる。
+
+そして方式ごとの前提が明記されている:
+
+| 節 | 方式 | 仕様が置いている前提 | 緩和策として仕様が挙げるもの |
+|---|---|---|---|
+| **§9.4.4** | `publickey` | **クライアントホストが侵害されていないこと**、およびサーバーのホスト秘密鍵が侵害されていないこと | 秘密鍵のパスフレーズ（ただし強制できない）。パスフレーズを強制可能にするスマートカード等 |
+| §9.4.5 | `password` | サーバーが侵害されていないこと | 公開鍵認証など別の方式 |
+| **§9.4.6** | `hostbased` | **クライアントが侵害されていないこと** | **他の認証方式との併用以外に緩和策はない** |
+
+> The use of public key authentication assumes that the client host has not been compromised. It also assumes that the private key of the server host has not been compromised. — §9.4.4
+
+> Host-based authentication assumes that the client has not been compromised. There are no mitigating strategies, other than to use host-based authentication in combination with another authentication method. — §9.4.6
+
+**SSH のクライアント認証は、クライアント端末が侵害されていないことを「前提」として置き、それを検証する手段を持たない。** §9.4.4 が挙げる緩和策（パスフレーズ、スマートカード）は鍵の保護を強めるものであって、端末の状態を検証するものではない。
 
 ### §4.2 Extensibility — 拡張の設計思想
 
@@ -91,6 +114,19 @@ TOFU の具体的な実装戦略（初回は無検証で受け入れ、ローカ
 
 ## 引用すべき箇所
 
+**本研究の動機（クライアント認証）:**
+
+> The use of public key authentication assumes that the client host has not been compromised.
+> — RFC 4251, §9.4.4
+
+> Host-based authentication assumes that the client has not been compromised. There are no mitigating strategies, other than to use host-based authentication in combination with another authentication method.
+> — RFC 4251, §9.4.6
+
+> Authentication is no stronger than the weakest combination allowed.
+> — RFC 4251, §9.4
+
+**対比（サーバー認証側の TOFU）:**
+
 > The protocol provides the option that the server name - host key association is not checked when connecting to the host for the first time. [...] it becomes vulnerable to active man-in-the-middle attacks.
 > — RFC 4251, §4.1
 
@@ -110,17 +146,21 @@ TOFU の具体的な実装戦略（初回は無検証で受け入れ、ローカ
 
 （※ここは解釈）
 
-**宿題の答えは「はっきり引ける」。** [[ssh-core-rfcs]] に残っていた「仕様自身が TOFU の限界を認めていると引けるか」は、§9.3.4 の `inherently insecure and is NOT RECOMMENDED` で決着する。しかも §4.1 は TOFU を採った理由まで自白している——**「鍵基盤が存在しないから」であって、「これで十分だから」ではない**。論文の Introduction はこの 2 つを並べるだけで問題設定が完成する。
+**論文の Introduction の問題設定は §9.4.4 と §9.4.6 で立つ。** 仕様自身が「`publickey` 認証はクライアントホストが侵害されていないことを前提にする」「`hostbased` 認証には他方式との併用以外の緩和策がない」と書いている。つまり SSH のクライアント認証は、端末の完全性を**検証する対象ではなく前提**として扱っている。本研究はこの前提を、server の challenge と client の attestation response によって**検証可能な主張に置き換える**提案として位置づけられる。
 
-**さらに強いのは §9.3.4 の "future extensions" の一文。** 仕様自身が「拡張によってより良い機構が提供されうる」と述べ、その例として secure DNS と Kerberos/GSS-API を挙げている。本研究は**この列に attestation を加える提案**として位置づけられる。「仕様の想定外のことをしている」のではなく「仕様が予告した空白を埋めている」と言える。これは査読でも IETF でも通りやすい構図。
+**§9.4.4 の緩和策との差分が、そのまま貢献の説明になる。** 仕様が挙げるのはパスフレーズとスマートカードで、どちらも「鍵を盗まれにくくする」対策である。攻撃者が端末を改竄して正規ユーザのセッションに相乗りする場合や、改竄された `ssh` / `ssh-agent` が鍵を悪用する場合には効かない。attestation は「鍵を使っている端末がいま期待した状態か」を検証するので、**緩和策の軸が違う**と論じられる。
 
-**ただし §4.1 の WG 声明は諸刃。** 「使われない解決策では安全性は向上しない」という一文は、**本研究の提案にもそのまま跳ね返る**。TPM 前提・Reference Value 管理が必要な仕組みは、TOFU より確実に使いにくい。問い 2（後方互換性・段階的導入）と問い 5（大規模運用時のコスト）は、この一文への回答として書くべきものだと思う。「ease of use を損なわずに TOFU を置き換える」という枠で論じると、仕様の価値判断と整合する。
+**§9.4 の前提文も効く。** ユーザ認証は「サーバー認証済みで、session identifier が計算済みのトランスポートの上で動く」と明記されている。client の Evidence を session identifier に束縛する設計（[[rfc4252-ssh-authentication-protocol]] §7 の署名対象と同じ構造）は、この前提をそのまま使える。
 
-**信頼モデルの位置づけ。** §4.1 の 2 モデル（ローカル DB / CA）に対し、attestation は**第 3 のモデル**を提案することになる——「鍵と名前の対応」ではなく「鍵とマシンの状態の対応」を検証する。この対比は Background の構成にそのまま使える。なお §4.1 の CA モデルの難点として挙がる「中央基盤に多くの信頼が置かれる」は、RATS の Verifier 配置（問い 3）でも同じ問題として再来する。
+**§4.1 / §9.3.4 の TOFU の議論は対比として使う。** サーバー認証側では仕様が `inherently insecure and is NOT RECOMMENDED` と認め、TOFU を採った理由を「鍵基盤が存在しないから」と説明している。「SSH は認証の両側で鍵の所持しか見ていない。サーバー側の弱点は広く議論されてきたが、クライアント側の前提（§9.4.4）は検証されないまま残っている」という対比を Introduction に置ける。**ただし §9.3.4 の "future extensions" はサーバーのホスト鍵についての一文なので、本研究の直接の根拠として引かないこと。**
+
+**§4.1 の WG 声明は本研究にも跳ね返る。** 「使われない解決策では安全性は向上しない」という一文は、TPM 前提・Reference Value 管理が必要な提案にそのまま当てはまる。問い 2（後方互換性・段階的導入）と問い 5（大規模運用時のコスト）は、この一文への回答として書くべきものだと思う。クライアント認証側では、`partial success` による多段認証（[[rfc4252-ssh-authentication-protocol]] §5.1）で「attestation を要求するユーザだけに段階的に適用する」形が取れるので、この点はサーバー認証側より論じやすい。
+
+**信頼モデルの位置づけ。** 既存のクライアント認証が「鍵と利用者の対応」を検証するのに対し、attestation は「鍵と端末の状態の対応」を検証する。§4.1 の CA モデルの難点として挙がる「中央基盤に多くの信頼が置かれる」は、RATS の Verifier 配置（問い 3）でも同じ問題として再来する。
 
 ## 未解決・気になる点
 
-- §9.4.4 Public Key Authentication、§9.4.6 Host-Based Authentication は未読。クライアント→サーバ方向の attestation を設計するうえで、既存のユーザ認証がどんな脅威を想定しているかは押さえるべき
+- ~~§9.4.4 Public Key Authentication、§9.4.6 Host-Based Authentication は未読~~ → **2026-09-15 精読済み**（上記 §9.4 の節）。§9.5 Connection Protocol（エンドポイントセキュリティ、プロキシ転送、X11 転送）はまだ未読
 - RFC 9141 が RFC 4251 の何を更新したか（[[ssh-core-rfcs]] からの積み残し）
 - §5 のデータ型のうち、**大きなバイナリ（TPM Quote、イベントログ）を運ぶときのサイズ制約**。RFC 4253 §6.1 の最大パケット長（32768 バイト以上を受け入れること）との関係を要確認 → [[rfc4253-ssh-transport-layer]]
 - §4.5 Localization、§9.2 Control Character Filtering は本研究に無関係と判断してスキップした

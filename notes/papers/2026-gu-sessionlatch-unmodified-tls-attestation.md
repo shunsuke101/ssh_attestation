@@ -36,11 +36,11 @@ Confidential VM 上で動く**既存サービスを一切改変せずに** sessi
 
 `docs/scope.md` の「中心的な問い」との対応:
 
-- **問い 2（後方互換性・段階的導入）** — 本命。「プロトコルを一切変えない」という最も過激な後方互換の取り方の実例。SSH でこれをやるなら、sshd も ssh クライアントも触らずに OS 層で KEXDH_REPLY を観測して host key と ephemeral 鍵を Evidence に束縛する、という対応物が作れる。**自分の設計が「OpenSSH に手を入れる」路線を採るなら、なぜ OS 層の interposition ではだめなのかを説明する責任が生じる**。ここが Related Work での差分の要点になる。
-- **問い 4（Freshness とセッション束縛）** — 束縛対象を **ephemeral 公開鍵**に取っているのが要点。`2026-sardar-identity-crisis-attested-tls.md` が指摘した diversion attack は、まさにこの束縛の欠如が原因だった。SSH でいえば束縛対象の候補は (a) session identifier H、(b) KEX の server ephemeral 公開鍵、(c) host key。SessionLatch は (b) を選んでいる。SSH では H が (b) と host key の両方を含むハッシュなので、**H を束縛すれば (b) より強い**という議論ができるはず。ここは自分で詰める価値がある。
+- **問い 2（後方互換性・段階的導入）** — 本命。「プロトコルを一切変えない」という最も過激な後方互換の取り方の実例。SSH でこれをやるなら、sshd も ssh クライアントも触らずに OS 層でクライアントの鍵交換メッセージ（`SSH_MSG_KEXDH_INIT` の ephemeral 値）を観測し、それをクライアント端末の Evidence に束縛する、という対応物が作れる（SessionLatch はサーバー側の attestation だが、本研究はクライアント側なので向きを入れ替えて考える）。**自分の設計が「OpenSSH に手を入れる」路線を採るなら、なぜ OS 層の interposition ではだめなのかを説明する責任が生じる**。ここが Related Work での差分の要点になる。
+- **問い 4（Freshness とセッション束縛）** — 束縛対象を **ephemeral 公開鍵**に取っているのが要点。`2026-sardar-identity-crisis-attested-tls.md` が指摘した diversion attack は、まさにこの束縛の欠如が原因だった。SessionLatch は server ephemeral 公開鍵を束縛対象に選んでいる。本研究（client の Evidence）に置き換えると、束縛対象の候補は (a) session identifier H、(b) KEX の client ephemeral 値 `e`、(c) client の認証用公開鍵。SSH では H が `e` とサーバー側の寄与（`f`、ホスト鍵、KEXINIT の cookie）をすべて含むハッシュなので、**H を束縛すれば (b) より強い**という議論ができるはず。さらに研究テーマは server の challenge を求めているので、実際の束縛値は「server challenge ‖ H」の形になる（→ [[rfc4253-ssh-transport-layer]]）。ここは自分で詰める価値がある。
 - **問い 5（検証コストとレイテンシ）** — Evidence のやり取りをハンドシェイクと**重ねる**ことでレイテンシを隠す、という手口はそのまま SSH に持ち込める。SSH の場合 KEXINIT から NEWKEYS までの間に余裕があるので、同じことができる可能性が高い。評価の比較対象の立て方（Native / naive RA / 既存手法 / 提案）もそのまま参考になる。
 
-借用できそうな部品: 束縛値の作り方 `B_S = H(δ_S ∥ ks_S)` の形、および「verifier が承認するまで**クライアント側の送信を止める**」という gating の考え方（SSH なら NEWKEYS 後・SERVICE_REQUEST 前で止めるのが自然か）。
+借用できそうな部品: 束縛値の作り方 `B_S = H(δ_S ∥ ks_S)` の形、および「verifier が承認するまで**先へ進ませない**」という gating の考え方。本研究の向きでは Verifier はサーバーなので、**client の Evidence を検証し終えるまで server が `SSH_MSG_USERAUTH_SUCCESS` を返さない**形が自然な対応物になる。
 
 ## 引用すべき箇所
 

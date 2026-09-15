@@ -25,9 +25,9 @@ remote attestation の**アーキテクチャ**を定義する Informational RFC
 
 | 役割 | 本研究での対応物 |
 |---|---|
-| **Attester** | attestation される側の SSH ホスト（逆方向ならクライアント端末） |
-| **Verifier** | Evidence を Appraisal Policy で評価する主体。SSH クライアント自身か、独立サービスか、CA 兼務か（＝中心的な問い 3） |
-| **Relying Party** | 接続するか否かを決める SSH クライアント |
+| **Attester** | attestation される側の SSH クライアント（接続元端末） |
+| **Verifier** | Evidence を Appraisal Policy で評価する主体。SSH サーバー自身か、独立サービスか、CA 兼務か（＝中心的な問い 3） |
+| **Relying Party** | ログインを許すか否かを決める SSH サーバー |
 | **Endorser** | TPM ベンダ等。EK 証明書の発行元 |
 | **Reference Value Provider** | OS ディストリビュータ、自組織のビルドシステム |
 
@@ -35,10 +35,10 @@ remote attestation の**アーキテクチャ**を定義する Informational RFC
 
 | モデル | 流れ | SSH に当てはめたときの含意 |
 |---|---|---|
-| **Background-Check Model** | Attester → Relying Party → Verifier → Relying Party | SSH クライアントが接続のたびに Verifier に問い合わせる。**Verifier の可用性が SSH 接続の前提になる**のが運用上の難点 |
-| **Passport Model** | Attester → Verifier → Attester → Relying Party | ホストが事前に Attestation Result を取得して提示。ハンドシェイクが速いが、**Result の鮮度が落ちる**（中心的な問い 4） |
+| **Background-Check Model** | Attester → Relying Party → Verifier → Relying Party | SSH サーバーが接続のたびに外部の Verifier に問い合わせる。**Verifier の可用性がログインの前提になる**のが運用上の難点 |
+| **Passport Model** | Attester → Verifier → Attester → Relying Party | クライアントが事前に Attestation Result を取得して提示。ハンドシェイクが速いが、**Result の鮮度が落ち、接続時の server challenge が効かない**（中心的な問い 4） |
 
-**この二択が SSH 統合における最初の設計判断になる。** SEAT の expat draft は両対応にしているが、SSH の運用実態（踏み台・大量ホスト・オフライン環境）を考えると片方に寄せる合理性があるかもしれない。
+**本研究の基本形はこのどちらでもなく、Verifier と Relying Party が同じ SSH サーバーに同居する構成**。[[draft-ietf-rats-reference-interaction-models]] §7.1.1 は 2 つのトポロジを Challenge/Response の変種として整理しており、同居する場合は canonical な Challenge/Response（server が challenge を送り、client が Evidence を返す）になる。Verifier を独立サービスに切り出す場合（問い 3）に Background-Check 型へ移る。**Passport 型は server challenge による freshness という研究テーマの要件と相性が悪い。**
 
 ### 概念メッセージ
 
@@ -72,7 +72,7 @@ Evidence / Endorsements / Reference Values / Appraisal Policy / Attestation Resu
 
 同時に注意すべきは、**RFC 9334 準拠は貢献にならない**という点。RATS は「SSH にどう載せるか」を何も言っていないので、貢献はその空白部分に置く必要がある。
 
-論文での使い方: Background で役割語とトポロジを導入し、Design 節で「本研究は background-check / passport のどちらを採るか、なぜか」を論じる形が自然。
+論文での使い方: Background で役割語とトポロジを導入し、Design 節で「本研究は Attester = SSH クライアント、Verifier / Relying Party = SSH サーバーとし、Challenge/Response（[[draft-ietf-rats-reference-interaction-models]]）を採る。Passport 型を採らないのは server challenge による freshness を失うから」と論じる形が自然。
 
 ## 未解決・気になる点
 

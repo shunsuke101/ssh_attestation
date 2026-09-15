@@ -85,11 +85,13 @@ TPM 1.2 / 2.0 とも nonce は digest サイズまで（20 または 32 バイ�
 1. DevID 証明書で TLS / SSH セッションが意図した機器で終端していることを確かめる
 2. **そのうえで** NETCONF / RESTCONF (§3.2.1) を張り、CHARRA YANG モデルで Quote を取りに行く
 
-つまり attestation は SSH の**外側**にあり、SSH のホスト認証そのものは静的鍵のまま何も変わらない。RIV にとって SSH は RFC 4253 として一度参照されるだけの前提である。**本研究が埋めるのはまさにこの穴**——attestation を SSH の外の管理プロトコルに置くのではなく、SSH の認証そのものに組み込む。RFC 9683 は「先行研究」ではなく「対比対象」として引くのが正しい使い方だと思われる。
+つまり attestation は SSH の**外側**にあり、SSH の認証そのものは鍵の所持証明のまま何も変わらない。RIV にとって SSH は RFC 4253 として一度参照されるだけの前提である。**本研究が埋めるのはまさにこの穴**——attestation を SSH の外の管理プロトコルに置くのではなく、SSH のクライアント認証そのものに組み込む。
+
+**役割の向きが RIV と逆になる点に注意。** RIV では Verifier（Network Management Station）が SSH で機器に接続しに行くので、**Attester = SSH サーバー側、Verifier = SSH クライアント側**になる。本研究は **Attester = SSH クライアント、Verifier / Relying Party = SSH サーバー**。一方で**challenge-response の構造は同じ**である。§3.2 Step 2 で Verifier が nonce を生成して要求し、Step 3 で Attester が nonce 入りの Quote を AK で署名して返す——これは研究テーマの「server からの challenge で freshness を担保し、client からの response で完全性を示す」をそのまま SSH の向きに置き換えたものになる。§3.2 Step 5 の判定条件（署名・nonce 一致・PCR とログの整合・Reference Value との照合・freshness 閾値）は、サーバー側の Verifier の判定条件として流用できる。RFC 9683 は「設計の土台（TPM ベースの Evidence と判定条件）」であり、同時に「SSH を土管としてしか使っていない対比対象」でもある。
 
 **§3.3 peer-to-peer は構造が本研究に近い。** 各ピアが Attester 兼 Verifier になり、中央権威に問い合わせずに済むよう RIM と Appraisal Policy を自前で持つ、という設計。本研究の方向（Attester = SSH クライアント、Verifier / Relying Party = SSH サーバー自身）はこの片方向版にあたる。「各ピアが Reference Value を持ち運ばねばならない」という指摘は問い 5（大規模運用時の Reference Value 管理）そのもので、RIV 自身がここを out of scope にしている以上、本研究で正面から扱う価値がある。
 
-**§2.1.1 の Credentials クラスが面白い。** 「Root of Trust の外にある公開鍵や資格情報が改竄されていないことを attestation で確認したい」という発想は、SSH に持ち込むと `authorized_keys` やホスト鍵そのものを測定対象にすることを意味する。attestation で守る対象に「鍵ファイルの完全性」が入るなら、TOFU の弱点を別角度から潰せる。問い 1（どのレイヤに載せるか）とは独立に検討できる論点。
+**§2.1.1 の Credentials クラスが面白い。** 「Root of Trust の外にある公開鍵や資格情報が改竄されていないことを attestation で確認したい」という発想は、SSH クライアント側に持ち込むと、`ssh` / `ssh-agent` のバイナリ、`ssh_config`、クライアントの秘密鍵を保護する仕組み（TPM 常駐鍵か否か）を測定対象にすることを意味する。attestation で守る対象に「SSH クライアント自体と鍵保護の完全性」が入るなら、`publickey` 認証が前提にしている「client host has not been compromised」（RFC 4251 §9.4.4）を別角度から検証できる。問い 1（どのレイヤに載せるか）とは独立に検討できる論点。
 
 **プライバシーの割り切りは引き継げない。** RIV は相手がルータだから "non-privacy-preserving" で済ませているが、本研究は SSH クライアント端末を Attester にする方向を採った。個人が使う端末に DevID 相当の一意識別子を持たせて毎回サーバーに提示させるのは、そのままではプライバシー問題になる。DAA 系（seen.jsonl の `draft:ietf-rats-daa-09`）を一度見る必要がある。
 

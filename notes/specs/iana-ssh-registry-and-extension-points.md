@@ -73,7 +73,7 @@ RFC 8308 "Extension Negotiation in the Secure Shell (SSH) Protocol" (D. Bider, 2
 
 RFC 4251 / 4252 / 4253 / 4254 のすべてを更新している。RFC 9519 に更新された。
 
-**タイミングの 2 択が本研究に直接効く。** 「鍵交換の直後」に Evidence を送れるなら、**ユーザ認証が始まる前にホストの状態を検証できる**。これは PAM 方式（[[hardwareprotectedssh-bidirectional-tpm-attestation]]）が構造的に到達できない位置。
+**タイミングの規定が本研究に効く。** クライアントは「鍵交換の直後」に EXT_INFO を送れるので、**ユーザ認証が始まる前にクライアントの能力（attestation 対応）を表明できる**。ただしこの位置には server challenge の往復が無いので、Evidence 本体の運搬には向かない（→ [[rfc8308-ssh-extension-negotiation]]）。
 
 ## 引用すべき箇所
 
@@ -87,12 +87,14 @@ RFC 4251 / 4252 / 4253 / 4254 のすべてを更新している。RFC 9519 に�
 
 （※ここは解釈）
 
-**設計の骨格がこのノートで決まる。** 提案は次の形が最も現実的:
+**設計の骨格がこのノートで決まる。** 研究テーマ（attestation をクライアント認証に拡張し、server の challenge と client の response で行う）に照らすと、提案は次の形が最も現実的:
 
-1. `SSH_MSG_EXT_INFO`（鍵交換直後のタイミング）で attestation 対応を表明する拡張名を定義する
-2. Evidence 本体は、拡張値として運ぶか、新設の host key algorithm（＝ attestation 付きホスト鍵型）として運ぶ
-3. どちらも **Expert Review** で登録可能。新メッセージ番号を避けられる
-4. プロトタイプ実装は 192–255 の Private Use 範囲で先に作れる（OpenSSH の PING/PONG が前例）
+1. **server challenge / client response の往復は、新しい Authentication Method Name（ユーザ認証方式）として定義する。** 方式固有メッセージ番号 60–79 は方式ごとに再利用できるので、**新しいメッセージ番号の取得が要らない**（→ [[rfc4252-ssh-authentication-protocol]]）
+2. attestation 対応の表明は、`SSH_MSG_EXT_INFO`（鍵交換直後）の拡張名、または認証方式名の提示（`SSH_MSG_USERAUTH_FAILURE` の name-list）で行う
+3. 認証方式名も拡張名も **Expert Review** で登録可能。Standards Action の Message Numbers を避けられる
+4. プロトタイプ実装は 192–255 の Private Use 範囲と `@domain` 形式の名前で先に作れる（OpenSSH の PING/PONG が前例）
+
+（旧版では「Evidence 本体を拡張値か attestation 付きホスト鍵型として運ぶ」としていたが、それはホスト attestation を前提にした案で、現在の研究テーマ（クライアント認証）には合わないため改めた。2026-09-15）
 
 この道筋は [[draft-fossati-seat-expat]] が TLS で選んだ「コアを変えず既存の拡張点に載せる」方針と一致する。**TLS 側がハンドシェイク拡張路線を捨てた理由が「重すぎる」ことなら、SSH でも同じ判断になる。**
 
@@ -101,4 +103,4 @@ RFC 4251 / 4252 / 4253 / 4254 のすべてを更新している。RFC 9519 に�
 - ~~鍵交換直後のタイミングで Evidence を送れるか~~ → **2026-09-15 解決。送れる。** クライアントは「最初の `SSH_MSG_NEWKEYS` の直後の 1 パケット」でのみ送れる (MUST)。サーバは同じ位置と `SSH_MSG_USERAUTH_SUCCESS` の直前の 2 回。いずれもユーザ認証より前（サーバの第 2 の機会を除く）。ただし**最初の鍵交換の後にしか送れず、rekey のたびに送り直す仕組みはない**。詳細は [[rfc8308-ssh-extension-negotiation]]
 - ~~拡張値のサイズ上限~~ → **2026-09-15 解決。** 拡張値に固有の上限はなく、RFC 4253 のパケット長だけが上限（全実装が保証するのは非圧縮ペイロード 32768 バイト）。TPM Quote は収まるが、イベントログは入らない可能性が高い。→ [[rfc8308-ssh-extension-negotiation]] §2.5
 - Extension Names サブレジストリの現在の登録状況（何が既にあるか）
-- RFC 9519 の原文を未取得。上表は要約に基づく
+- ~~RFC 9519 の原文を未取得。上表は要約に基づく~~ → **2026-09-15 原文で確認。** 影響を受けないのは "Message Numbers" と "Publickey Subsystem Status Codes" だけで、他のサブレジストリ（Extension Names、Key Exchange Method Names 等）は Expert Review。登録は `ssh-reg-review@ietf.org` での 3 週間のレビュー期間の後に行われる

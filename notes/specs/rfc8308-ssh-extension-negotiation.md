@@ -160,7 +160,7 @@ USERAUTH_SUCCESS
 
 （※ここは解釈）
 
-**本研究の方向（Attester = SSH クライアント、Verifier / Relying Party = SSH サーバ）にとって、クライアントの EXT_INFO は位置がちょうどよい。**
+**本研究の方向（Attester = SSH クライアント、Verifier / Relying Party = SSH サーバ）にとって、クライアントの EXT_INFO は位置だけ見ればちょうどよい。**（ただし下で述べる通り、server challenge の往復が無いので Evidence の運搬路としては研究テーマと合わない）
 
 - 鍵交換の直後、**ユーザ認証が始まる前**に届く。サーバは「このクライアントを認証フェーズに進ませるか」を Evidence を見てから決められる
 - NEWKEYS の後なので**暗号化されている**。Evidence（PCR 値、ファームウェア版）の受動的な盗聴を防げる
@@ -169,7 +169,9 @@ USERAUTH_SUCCESS
 
 **ただし freshness の設計に固有の制約が 1 つある。** クライアントの EXT_INFO は NEWKEYS の直後の 1 パケットに限られるので、**サーバから専用の challenge を受け取ってから Evidence を作る往復が入らない**。この時点でクライアントが使えるサーバ由来の予測不能な値は、**鍵交換そのもの**——サーバ KEXINIT の cookie と DH の `f` が入った H だけである。
 
-つまり EXT_INFO に載せる設計は、RATS の Challenge/Response（→ [[draft-ietf-rats-reference-interaction-models]]）を「**鍵交換を challenge とみなす 1 往復版**」として実現することになる。これは [[rfc4253-ssh-transport-layer]] に書いた「H を Handle として使えるか」という論点と完全に一致する。**EXT_INFO を選ぶなら、その論証から逃げられない。** 逆に、明示的なサーバ challenge が必要と判断するなら、EXT_INFO ではなくユーザ認証層の新方式（サーバが 60–79 番で challenge を送れる → [[rfc4252-ssh-authentication-protocol]]）を選ぶことになる。**問い 1 と問い 4 はここで結びつく。**
+つまり EXT_INFO に載せる設計は、RATS の Challenge/Response（→ [[draft-ietf-rats-reference-interaction-models]]）を「**鍵交換を challenge とみなす 1 往復版**」として実現することになる。これは [[rfc4253-ssh-transport-layer]] に書いた「H を Handle として使えるか」という論点と完全に一致する。**EXT_INFO を選ぶなら、その論証から逃げられない。** 研究テーマは「server からの challenge によって freshness を担保する」と明示しているので、**challenge の往復を持たない EXT_INFO は Evidence の運搬路としてはテーマと合わない**。明示的な server challenge を送れるのはユーザ認証層の新方式（サーバが 60–79 番で challenge を送れる → [[rfc4252-ssh-authentication-protocol]]）である。**問い 1 と問い 4 はここで結びつく。**
+
+**EXT_INFO の現実的な役割は「能力表明」。** client が attestation 対応を表明し、server が対応する認証方式を提示する、という交渉部分に使える。KEXINIT 内の表明が H に入るのでダウングレード検出にも効く。
 
 **TPM 側のサイズ制約も効く。** H を TPM の `qualifyingData` にそのまま入れられるかは、KEX 方式のハッシュ長と TPM が実装する最大ハッシュ長の組み合わせで決まる（→ [[tcg-tpm2-library-v185]]）。
 

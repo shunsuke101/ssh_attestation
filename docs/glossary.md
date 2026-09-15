@@ -14,9 +14,19 @@ RATS のアーキテクチャ用語は**訳さず英語のまま**使う。訳�
 | **Relying Party** | Attestation Result を受けて、アクセス可否などを判断する | SSH サーバー（接続するか否かを決める） |
 | **Endorser** | Attester のハードウェアの真正性を保証する（製造者など） | TPM ベンダ、EK 証明書の発行者 |
 | **Reference Value Provider** | 「正しい状態」の基準値を提供する | OS ディストリビュータ、自組織のビルドシステム |
-| **Evidence** | Attester が出す主張（PCR quote など） | TPM Quote + イベントログ |
-| **Attestation Result** | Verifier の評価結果 | 「このホストは信頼できる状態」という署名付き判断 |
+| **Evidence** | Attester が出す主張（PCR quote など） | server の challenge を含めて生成した TPM Quote + イベントログ（= client の response） |
+| **Attestation Result** | Verifier の評価結果 | 「この接続元クライアント端末は信頼できる状態」という判断。サーバーがログインを許すか否かに使う |
 | **Appraisal Policy** | 評価の基準 | 期待 PCR 値、許容するファームウェア版など |
+
+### 相互作用モデル（Reference Interaction Models for Remote Attestation Procedures）
+
+| 用語 | 説明 | 本研究での対応物 |
+|---|---|---|
+| **Challenge/Response Remote Attestation** | Verifier が Handle（nonce）を送り、Attester がそれを含めた Evidence を返す | **本研究が採るモデル**。server が challenge を送り、client が response を返す |
+| **Uni-Directional Remote Attestation** | 外部の Handle Distributor が配る Handle を使い、Attester が一方的に Evidence を送る | 採らない（往復しないので server challenge にならない） |
+| **Streaming Remote Attestation** | 購読に基づいて Evidence を継続的に送る | 長時間セッション中の再 attestation を考えるときの参考 |
+| **Handle** | freshness・再生防止のために外部から Attester に与えられ、Evidence に含められる情報要素。attestation nonce や Epoch Marker の総称 | server の challenge |
+| **attestation nonce** | Handle として使う nonce。TLS nonce や署名アルゴリズム内部の nonce とは区別する | server の challenge を TPM の `qualifyingData` に入れたもの |
 
 ### 2 つのトポロジ
 
@@ -25,7 +35,7 @@ RATS のアーキテクチャ用語は**訳さず英語のまま**使う。訳�
 | **Background-Check Model** | Attester → Relying Party → Verifier → Relying Party | Relying Party が Verifier に問い合わせる。Verifier の集中管理がしやすい |
 | **Passport Model** | Attester → Verifier → Attester → Relying Party | Attester が事前に Attestation Result（=passport）を取得して提示。接続時のレイテンシが小さい |
 
-SSH への統合を考えるとき、**どちらのモデルを採るかが最初の設計判断**になる。
+Reference Interaction Models では、この 2 つは **Challenge/Response の変種**として整理されている（§7.1.1）。本研究の基本形は Verifier と Relying Party が同じ SSH サーバーに同居する構成で、2 つの区別は消える。**Verifier を独立した検証サービスに置く場合（中心的な問い 3）に Background-Check 型になる。**
 
 ---
 
@@ -78,11 +88,13 @@ SSH への統合を考えるとき、**どちらのモデルを採るかが最�
 
 | 用語 | 説明 |
 |---|---|
-| **TOFU (Trust On First Use)** | 初回接続時のホスト鍵を無検証で受け入れ、以後それを信頼するモデル。**本研究が置き換えたい対象** |
+| **TOFU (Trust On First Use)** | 初回接続時のホスト鍵を無検証で受け入れ、以後それを信頼するモデル。サーバー認証側の話であり、**本研究の対象（クライアント認証）ではない**。背景・対比として頻出する |
 | **`known_hosts`** | TOFU で受け入れたホスト鍵の台帳 |
 | **SSHFP** | ホスト鍵の指紋を DNS に置く仕組み（RFC 4255）。DNSSEC 前提 |
-| **SSH Certificate** | OpenSSH 独自のホスト／ユーザ証明書。`critical options` と `extensions` フィールドを持つ。**attestation 情報の運び先候補** |
-| **KEX (Key Exchange)** | SSH の鍵交換フェーズ。ここでホスト鍵の所持証明が行われる |
+| **SSH Certificate** | OpenSSH 独自のホスト／ユーザ証明書。`critical options` と `extensions` フィールドを持つ。ユーザ証明書は attestation 情報の運び先候補だが、**発行時点の主張なので server challenge による freshness は載らない** |
+| **KEX (Key Exchange)** | SSH の鍵交換フェーズ。ここでホスト鍵の所持証明が行われ、session identifier が決まる |
+| **session identifier** | 最初の KEX の exchange hash H。`publickey` 認証の署名対象に含まれ、認証を SSH セッションに束縛する。client の Evidence をセッションに束縛するときの候補 |
+| **`publickey` 認証** | RFC 4252 のクライアント認証方式。鍵の所持だけを証明する。**本研究が attestation で拡張する対象** |
 | **`ssh-agent`** | 秘密鍵を保持し署名を代行するデーモン。TPM 連携の実装点 |
 | **FIDO/U2F key type** | OpenSSH 8.2 以降の `ecdsa-sk` / `ed25519-sk`。**セキュリティキーの attestation 情報を扱える既存の前例**として重要 |
 | **Channel Binding** | 上位層の認証を下位層のセッションに束縛すること。attestation の再生防止に必須 |

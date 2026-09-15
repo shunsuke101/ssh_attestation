@@ -38,7 +38,7 @@ application-layer の action evidence を TPM の PCR に measure し、Veraison
 
 **1. 仕様の正しさと実装の正しさは別だという実例。** RFC 9334 も SEAT 系 draft も nonce による freshness を当然の前提として書いている。しかしその参照実装が nonce を検証していなかった。SSH に attestation を載せる設計を書くとき、「session identifier `H` に束縛する」と仕様に一行書くだけでは不十分で、**検証側が実際にその束縛を照合していることをどう保証するか**まで踏み込む必要がある。[[draft-many-seat-architecture]] の束縛 3 条件のうち第 3 条件（binder を Evidence に焼き込む）は attester 側の話だが、この論文が突いたのは **relying party / verifier 側が本当に照合しているか**という裏側である。
 
-**2. 「replay された quote が affirming になる」は本研究の脅威モデルの中核。** SSH の文脈に置き換えると、正常な状態のときに一度取得した quote を、その後改竄されたホストが再生し続けるという攻撃になる。これが通ると **attestation を足した意味が完全に消える**（TOFU 以下になる。TOFU は少なくとも鍵の変化には気づく）。したがって本研究では nonce と session binding の照合を、設計上の option ではなく **MUST として書くべき**だという論拠になる。
+**2. 「replay された quote が affirming になる」は本研究の脅威モデルの中核。** SSH の文脈に置き換えると、正常な状態のときに一度取得した quote を、その後改竄された**クライアント端末**が再生し続けるという攻撃になる。これが通ると **attestation を足した意味が完全に消える**（`publickey` 認証だけの場合と何も変わらず、しかも「検証済み」という誤った安心だけが残る）。研究テーマの「server からの challenge によって freshness を担保する」は、まさにこの攻撃を防ぐためのものであり、本研究では **server が challenge の一致と session binding を照合することを、設計上の option ではなく MUST として書くべき**だという論拠になる。
 
 なお本論文の応用文脈（自律エージェントの行動記録）は本研究とは無関係。**引用すべきは欠陥の内容と、それが参照実装で起きたという事実であって、応用側ではない。**
 

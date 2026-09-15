@@ -75,7 +75,7 @@ SSHM が**現に稼働している**ことは、提案の出し口があると�
 
 ### 最優先の次アクション
 
-**`draft-ietf-sshm-hostkey-update-00` "Host key update mechanism for SSH" を読む。** ホスト鍵の信頼更新を扱う現行の WG 文書であり、本研究と問題意識が最も近い。ここで TOFU がどう扱われているかは、提案の差別化に直結する。
+**`draft-ietf-sshm-hostkey-update-00` "Host key update mechanism for SSH" を読む。** ホスト鍵の信頼更新を扱う現行の WG 文書。サーバー認証側の話なので本研究（クライアント認証）とは方向が異なるが、SSHM WG が認証の信頼モデルをどこまで触る気があるかを測る材料になる。あわせて、SSHM でクライアント認証方式の追加や `publickey` 認証の拡張が議論されているかを確認すること（こちらが本研究の提案の直接の出し口になる）。
 
 ## 未解決・気になる点
 

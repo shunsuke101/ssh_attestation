@@ -38,11 +38,11 @@ added: 2026-08-21
 
 | 層 | 規定 | 何を保証するか | 本研究との関係 |
 |---|---|---|---|
-| **Transport Layer Protocol** | RFC 4253 | **サーバ認証**、暗号化、完全性 | **ここでホスト鍵の所持証明が行われる。本研究が手を入れたい層** |
-| **User Authentication Protocol** | RFC 4252 | クライアント（ユーザ）の認証 | トランスポート層の上で走る。既存の TPM 実装（PAM 系）はここに閉じている |
-| **Connection Protocol** | RFC 4254 | チャネル多重化 | 認証完了後。attestation を置くには遅すぎる可能性 |
+| **Transport Layer Protocol** | RFC 4253 | **サーバ認証**、暗号化、完全性 | ホスト鍵の所持証明（サーバー認証側。本研究の対象外）。**client の Evidence を束縛する session identifier と、能力交渉を提供する** |
+| **User Authentication Protocol** | RFC 4252 | クライアント（ユーザ）の認証 | **本研究の本丸。attestation をクライアント認証に拡張する層**。server challenge / client response を新しい認証方式として書ける。既存の TPM 実装（PAM 系）もここに閉じている |
+| **Connection Protocol** | RFC 4254 | チャネル多重化 | 認証完了後。ログイン可否の判断には遅い。長時間セッション中の再 attestation の候補 |
 
-**重要な含意**: サーバ認証は**トランスポート層で完結してしまう**。RFC 4253 の時点でクライアントはホスト鍵を受け入れるか否かを決めており、その判断材料は「鍵が既知か」だけ。ここが TOFU の所在。ユーザ認証層で何をしても、**その時点では既にホストを信頼済み**である。
+**重要な含意**: サーバ認証は**トランスポート層で完結する**。RFC 4253 の時点でクライアントはホスト鍵を受け入れるか否かを決めており、その判断材料は「鍵が既知か」だけ（TOFU の所在）。**クライアント認証はその後、サーバー認証済み・session identifier 計算済みのトランスポートの上で行われる**（RFC 4251 §9.4）。そしてクライアント認証の側も判断材料は鍵の所持だけで、仕様は「クライアントホストが侵害されていないこと」を前提として置いている（RFC 4251 §9.4.4）。本研究はこちら側を扱う。
 
 ## 主な更新 RFC（確認済み）
 
@@ -62,17 +62,17 @@ RFC 4253 を更新する **6668, 8268, 8332, 8709, 8758**、RFC 4251 を更新�
 
 （※ここは解釈）
 
-**前提** — Background 節で SSH の 3 層構造と「サーバ認証がトランスポート層で完結する」ことを説明するのに必須。
+**前提** — Background 節で SSH の 3 層構造と「クライアント認証はサーバー認証済みのトランスポートの上で、鍵の所持だけを見て行われる」ことを説明するのに必須。
 
 設計上、この地図から読み取れる制約は 3 つ:
 
-1. **中核 5 本は Obsolete されていない。** つまり本研究の提案は「4253 を置き換える」ではなく「4253 を **update** する新 RFC」の形を取るのが自然。前例（8308, 9142）がある
-2. **サーバ認証はトランスポート層で閉じる。** ユーザ認証層に attestation を置く設計（＝ [[hardwareprotectedssh-bidirectional-tpm-attestation]] の PAM 方式）は、**構造上 TOFU を解けない**。この論証は論文で使える
-3. **RFC 8308 が既に「後から拡張を足す」正規の穴を開けている。** ゼロから機構を作る必要はない
+1. **中核 5 本は Obsolete されていない。** つまり本研究の提案は既存 RFC を置き換えるのではなく、**新しい認証方式を定義する RFC**（RFC 4256 と同じ形）、または既存 RFC を **update** する新 RFC の形を取るのが自然。前例（4256, 8308, 9142）がある
+2. **クライアント認証は RFC 4252 の枠組みに新方式を足せる。** 研究テーマの server challenge / client response は、方式固有メッセージ（60–79）と session identifier への署名で書ける（→ [[rfc4252-ssh-authentication-protocol]]）。既存の PAM 方式（[[hardwareprotectedssh-bidirectional-tpm-attestation]]）との差分は「層」ではなく、**challenge-response とセッション束縛を SSH のメッセージとして定義するか否か**に置く
+3. **RFC 8308 が既に「後から拡張を足す」正規の穴を開けている。** 能力表明はゼロから機構を作る必要はない
 
 ## 未解決・気になる点
 
-- ~~RFC 4251 の Security Considerations は TOFU について何と書いているか~~ → **2026-09-09 解決。引ける。** §9.3.4 に `the use of this protocol without a reliable association of the binding between a host and its host keys is inherently insecure and is NOT RECOMMENDED` とあり、§4.1 は TOFU を採った理由（鍵基盤が存在しないから）まで自白している。さらに §9.3.4 は `future extensions to the protocol may provide better mechanisms` と拡張を予告している。詳細は [[rfc4251-ssh-architecture]]
+- ~~RFC 4251 の Security Considerations は TOFU について何と書いているか~~ → **2026-09-09 解決。引ける。** §9.3.4 に `the use of this protocol without a reliable association of the binding between a host and its host keys is inherently insecure and is NOT RECOMMENDED` とあり、§4.1 は TOFU を採った理由（鍵基盤が存在しないから）まで自白している。さらに §9.3.4 は `future extensions to the protocol may provide better mechanisms` と拡張を予告している。詳細は [[rfc4251-ssh-architecture]]。**2026-09-15 追記**: 研究テーマをクライアント認証に改めたので、これはサーバー認証側の対比材料になった。本研究の動機の一次出典は §9.4.4（`The use of public key authentication assumes that the client host has not been compromised.`）
 - ~~ホスト鍵の検証方法について RFC 4251/4253 はどこまで規定し、どこから実装依存か~~ → **2026-09-09 解決。** RFC 4251 §4.1 が信頼モデルを 2 つ（ローカル DB / CA）提示し、無検証も明示的に許容する。RFC 4253 §8 step 3 が実行地点（`C is also allowed to accept the key without verification`）。**どちらも「どう検証するか」は実装依存**で、新しい検証方法の追加は仕様の範囲内
 - RFC 9141 が RFC 4251 の何を更新したか（未着手）
 - RFC 4253 を更新する 6668, 8268, 8332, 8709, 8758 が未取得（[[rfc4253-ssh-transport-layer]] にも記載）

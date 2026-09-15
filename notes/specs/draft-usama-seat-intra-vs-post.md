@@ -62,9 +62,9 @@ SSH に対応させると:
 
 | 分類 | SSH での対応位置 | 見込み |
 |---|---|---|
-| Pre-handshake | ホスト鍵や SSH 証明書の `extensions` に Evidence を事前に埋め込む | 実装は最も楽。だが replay に弱く「接続時点の状態」を示せないので、TOFU 置換という本研究の動機を満たさない可能性が高い |
+| Pre-handshake | SSH ユーザ証明書の `extensions` に Evidence を事前に埋め込む | 実装は最も楽。だが replay に弱く「接続時点の状態」を示せないので、server の challenge で freshness を担保するという研究テーマの要件を満たさない |
 | Intra-handshake | KEX の拡張、または RFC 8308 `ext-info` を使った鍵交換中の交換 | Evidence 生成に 140–1020 ms かかるという数字が本当なら、**SSH のハンドシェイクに載せるのは相当苦しい**。SSH は対話用途でレイテンシに敏感 |
-| Post-handshake | `ssh-userauth` 内、または `SSH_MSG_GLOBAL_REQUEST` / 新規チャネル | TLS 側と同じ理由で最有力。ただし SSH には Exported Authenticators に相当する既製の枠組みが無い（[[draft-fossati-seat-expat]]） |
+| Post-handshake | `ssh-userauth` 内、または `SSH_MSG_GLOBAL_REQUEST` / 新規チャネル | TLS 側と同じ理由で最有力。特に `ssh-userauth` 内の新しい認証方式は、**クライアント認証の位置で server challenge / client response の往復を書ける**ので研究テーマと一致する。SSH には Exported Authenticators に相当する既製の枠組みは無い（[[draft-fossati-seat-expat]]）が、認証方式の追加という既製の拡張点がある |
 
 **特に効くのがレイテンシの実測値**。intra-handshake で 140–1020 ms という数字は、TLS 側が post-handshake に舵を切った理由の定量的裏付けであり、本研究が「SSH でも KEX 拡張路線を採らない」と判断する根拠として引用できる。[[draft-fossati-seat-expat]] の「なぜ tls-attestation が withdraw されたか」という宿題に、この文書が部分的に答えている。
 
