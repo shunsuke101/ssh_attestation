@@ -112,6 +112,6 @@ IANA 登録名は printable US-ASCII、**`@` / `,` / 空白 / 制御文字 / DEL
 
 ## 未解決・気になる点
 
-- RFC 9519 が登録ポリシーを Expert Review に緩和した（Message Numbers は Standards Action のまま）と [[ssh-core-rfcs]] にあるが、**本ノートでは一次情報を当たっていない**。KEX 方式名・認証方式名の登録が実際どこまで軽くなったかは要確認
+- ~~RFC 9519 の登録ポリシー緩和を一次情報で確認していない~~ → **2026-09-15 確認済み。** RFC 9519 は IETF Review だったサブレジストリ（Key Exchange Method Names、Authentication Method Names、Extension Names ほか）をすべて Expert Review に変更し、例外は "Message Numbers" と "Publickey Subsystem Status Codes" のみ（Standards Action のまま）。→ [[rfc8308-ssh-extension-negotiation]]
 - 30–49 の「方式ごとに再利用可」は、**同一接続で複数の KEX 方式が同時に走らない**前提。attestation を KEX に載せる場合、番号衝突が起きない保証はこの前提に依存する。RFC 4253 §7.1 を読む限り問題ないはずだが、rekey（§9）時の扱いは要確認
 - 現在の IANA レジストリの実際の状態（登録済みの KEX 方式名・認証方式名の一覧）は未取得。名前の衝突回避のため、実装前に一度取る → [[iana-ssh-registry-and-extension-points]]

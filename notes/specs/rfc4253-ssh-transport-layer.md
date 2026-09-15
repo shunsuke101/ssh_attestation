@@ -165,7 +165,7 @@ byte[n]   key/certificate data
 **ただし [[draft-ietf-rats-reference-interaction-models]] §2.2 の警告を思い出すこと。** あの節は「TLS nonce は Handle ではない」と切り分けている。H や session identifier は TLS nonce と同じく**鍵交換由来の値**であり、そのまま attestation nonce として使ってよいとは仕様上どこにも書かれていない。少なくとも次の 2 点は論証が要る:
 
 1. **Verifier（＝本研究ではサーバー）の寄与が入っているか。** → **入る。§7.1 の cookie がまさにそれ**。サーバの KEXINIT に含まれる 16 バイトのランダム値が `I_S` 経由で H に入り、しかも仕様がその目的を「どちらの側も session identifier を完全には決められないようにするため」と明言している。**「Verifier が予測不能な値を寄与する」という Challenge/Response の要件を、SSH は最初から満たしている**
-2. **TPM が署名できる形か。** → **合う。** TPM 2.0 の Quote が受け取れる qualifying data は digest サイズ（20 または 32 バイト）まで（→ [[rfc9683-riv-tpm-network-devices]] §3.2）。H はハッシュ値なのでサイズは収まる
+2. **TPM が署名できる形か。** → **条件付きで合う（2026-09-15 訂正）。** TPM 2.0 の `qualifyingData` の上限は「2 オクテット + その TPM が実装する最長ダイジェスト長」（→ [[tcg-tpm2-library-v185]]）。H の長さは KEX 方式名のハッシュで決まるので、`-sha256` 系の 32 オクテットならどの TPM でも入るが、**`-sha512` 系の 64 オクテットは SHA-512 を実装しない TPM には入らない**。H をそのまま渡すのではなく、ハッシュし直して正規化する設計が安全
 
 **つまり「H（または session identifier）を TPM の qualifying data に渡して Quote を取る」設計は、材料の上では成立する。** 残る論点は「SSH の cookie が RATS の言う Handle の要件（推測困難性、Verifier による生成、リプレイ防止）を満たすと論証できるか」であって、そこが本研究の設計上の主張になる。参照モデルからの delta として明示すべき箇所。
 

@@ -48,7 +48,7 @@ added: 2026-08-21
 
 | RFC | タイトル | 何を変えたか |
 |---|---|---|
-| **8308** (2018-03, D. Bider) | Extension Negotiation in the Secure Shell (SSH) Protocol | **`SSH_MSG_EXT_INFO` による拡張交渉機構を導入。** 4251/4252/4253/4254 のすべてを更新。→ [[iana-ssh-registry-and-extension-points]] |
+| **8308** (2018-03, D. Bider) | Extension Negotiation in the Secure Shell (SSH) Protocol | **`SSH_MSG_EXT_INFO` による拡張交渉機構を導入。** 4251/4252/4253/4254 のすべてを更新。→ 個別ノート [[rfc8308-ssh-extension-negotiation]]、レジストリは [[iana-ssh-registry-and-extension-points]] |
 | **9142** (2022, M. Baushke) | Key Exchange (KEX) Method Updates and Recommendations for Secure Shell (SSH) | KEX の推奨更新。SHA-1 系の段階的廃止、`diffie-hellman-group14-sha256` を必須に。4250/4253/4432/4462 を更新 |
 | **9519** (2024, P. Yee) | Update to the IANA SSH Protocol Parameters Registry Requirements | **登録ポリシーを IETF Review から Expert Review に緩和**（Message Numbers は Standards Action のまま）。4250/4716/4819/8308 を更新。→ [[iana-ssh-registry-and-extension-points]] |
 | **9987** (2026-05, D. Miller) | Secure Shell (SSH) Agent Protocol | **ssh-agent プロトコルがついに RFC 化された。** SSHM WG 産 |

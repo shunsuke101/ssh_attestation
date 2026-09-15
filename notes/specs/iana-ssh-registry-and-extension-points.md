@@ -63,6 +63,8 @@ added: 2026-08-21
 
 ## RFC 8308 の拡張交渉機構（＝正規の拡張点）
 
+> 原文を精読した個別ノートは [[rfc8308-ssh-extension-negotiation]]（2026-09-15）。以下は概要。
+
 RFC 8308 "Extension Negotiation in the Secure Shell (SSH) Protocol" (D. Bider, 2018-03) が定める機構:
 
 1. `SSH_MSG_KEXINIT` の `kex_algorithms` フィールドに指示子名を入れて対応を表明する（サーバは `ext-info-s`、クライアントは `ext-info-c`）
@@ -78,8 +80,8 @@ RFC 4251 / 4252 / 4253 / 4254 のすべてを更新している。RFC 9519 に�
 > a mechanism for Secure Shell (SSH) clients and servers to exchange information about supported protocol extensions confidentially after SSH key exchange
 > — RFC 8308, Abstract
 
-> The "Message Numbers" and "Publickey Subsystem Status Codes" registries retain Standards Action requirements due to their limited one-byte value space.
-> — RFC 9519 の内容（※datatracker/rfc-editor の要約に基づく。**原文の正確な文言は要確認**）
+> The only IANA SSH protocol parameter registries not affected are "Message Numbers" and "Publickey Subsystem Status Codes", as these remain Standards Action due to their limited resources as one-byte registry values.
+> — RFC 9519, §2（2026-09-15 に原文で確認し、要約に基づく旧引用を差し替え）
 
 ## 自研究との関係
 
@@ -96,7 +98,7 @@ RFC 4251 / 4252 / 4253 / 4254 のすべてを更新している。RFC 9519 に�
 
 ## 未解決・気になる点
 
-- RFC 8308 の「認証成功の直前」タイミングは、ホスト attestation には遅すぎるか。**鍵交換直後のタイミングで Evidence を送れるかを原文で確認する**（`SSH_MSG_EXT_INFO` の送信可能タイミングの規定）
-- 拡張値のサイズ上限。TPM Quote + イベントログは数十 KB になりうる。`SSH_MSG_EXT_INFO` にそれを載せられるか
+- ~~鍵交換直後のタイミングで Evidence を送れるか~~ → **2026-09-15 解決。送れる。** クライアントは「最初の `SSH_MSG_NEWKEYS` の直後の 1 パケット」でのみ送れる (MUST)。サーバは同じ位置と `SSH_MSG_USERAUTH_SUCCESS` の直前の 2 回。いずれもユーザ認証より前（サーバの第 2 の機会を除く）。ただし**最初の鍵交換の後にしか送れず、rekey のたびに送り直す仕組みはない**。詳細は [[rfc8308-ssh-extension-negotiation]]
+- ~~拡張値のサイズ上限~~ → **2026-09-15 解決。** 拡張値に固有の上限はなく、RFC 4253 のパケット長だけが上限（全実装が保証するのは非圧縮ペイロード 32768 バイト）。TPM Quote は収まるが、イベントログは入らない可能性が高い。→ [[rfc8308-ssh-extension-negotiation]] §2.5
 - Extension Names サブレジストリの現在の登録状況（何が既にあるか）
 - RFC 9519 の原文を未取得。上表は要約に基づく
