@@ -1,15 +1,19 @@
 ---
-id: "draft:ietf-rats-reference-interaction-models-17"
+id: "draft:ietf-rats-reference-interaction-models-18"
+ids: ["draft:ietf-rats-reference-interaction-models-17", "draft:ietf-rats-reference-interaction-models-18"]
 title: "Reference Interaction Models for Remote Attestation Procedures"
 body: "IETF"
 status: "Active Internet-Draft (RATS WG Document, In WG Last Call)"
 year: 2026
 url: "https://datatracker.ietf.org/doc/draft-ietf-rats-reference-interaction-models/"
 type: spec
-tags: [rats, interaction-models, challenge-response, uni-directional, streaming, freshness, handle, attestation-nonce, epoch-marker, passport, background-check, charra, mutual-authentication]
+tags: [rats, interaction-models, challenge-response, uni-directional, streaming, freshness, handle, attestation-nonce, epoch-marker, passport, background-check, charra, mutual-authentication, conceptual-message, cmw]
 relevance: high
 added: 2026-09-09
+updated: 2026-10-13
 ---
+
+> **2026-10-13 更新: `-18`（2026-09-17）が出ている。** 本文は `-17` の精読に基づくが、`-18` で追加された節を「-18 での変更」に記した。状態は依然 **In WG Last Call / Proposed Standard**、RFC 化はまだ。失効予定 2027-03-21。
 
 ## 何を規定しているか
 
@@ -18,6 +22,35 @@ RATS（RFC 9334）の役割の間で Conceptual Message、とりわけ Evidence 
 著者は H. Birkholz, M. Eckel（Fraunhofer SIT）, W. Pan（Huawei）, E. Voit（Cisco）。最新版 `-17`（2026-04-02 提出、2026-10-04 失効予定）、Intended status は **Standards Track**、RATS WG で **In WG Last Call**。`draft-birkholz-rats-reference-interaction-model` を置き換えたもの。
 
 文書自身が述べる目的は 2 つ (§1)。他文書がモデル記述をコピペして少しずつズレていくのを防ぐこと、そして各仕様が「参照モデルからの delta をどこに置いたか」を明示できるようにすること。つまり**他の仕様が引くための土台**として書かれている。
+
+## `-18` での変更（2026-09-17）
+
+TOC を `-17` と比べると、節が 2 つ増えている。**どちらも Handle の格上げに関するもので、本研究の「server からの challenge」の位置づけに直接効く。**
+
+### 新設 §6.1 "Handles as RATS Conceptual Messages"
+
+> Handles, whether instantiated as attestation nonces or Epoch IDs, are fundamental to many Remote Attestation protocols. In all the interaction models presented in this document, Handles are exchanged between RATS roles and used to correlate and lock together the different stages of the interaction. Given their ubiquity and key role, **it is appropriate to recognize them as RATS Conceptual Message in their own right.** — §6.1
+
+`-17` では Handle は「情報要素（information element）」の 1 つだったが、`-18` で **RFC 9334 の言う Conceptual Message（Evidence / Endorsements / Reference Values / Appraisal Policy / Attestation Result と同格）に昇格**した。
+
+### 新設 §10 IANA Considerations / §10.1
+
+CMW（Conceptual Message Wrapper）の indicator レジストリに Handle を登録するよう IANA に要求している:
+
+| Indicator value | Conceptual Message name | Reference |
+|---|---|---|
+| **5** | **Handle** | §6 および §6.1 |
+
+`-17` には IANA Considerations 節そのものが無かった。
+
+### 本研究への含意
+
+**「server が送る challenge」は、RATS の語彙では単なるパラメータではなく Conceptual Message である**ことになった。設計上の意味は 2 つ:
+
+1. **challenge を「運ぶべきメッセージ」として設計に明示できる。** SSH のユーザ認証方式で server が 60–79 番のメッセージで challenge を送る設計（→ [[rfc4252-ssh-authentication-protocol]]、先例は [[rfc4462-gssapi-ssh-auth-keyex]]）は、RATS 的にも「Conceptual Message を 1 つ運んでいる」と説明できる
+2. **CMW で包める。** Evidence を CMW（RFC 9999）で包む設計を採るなら、challenge も同じ枠で包める。ただし §6.1 は `A concrete Handle representations requires an associated media type for use with CMW.`（原文のまま。文法の崩れも原文）と述べており、**具体的な Handle 表現には media type が別途必要**
+
+本文の以下の記述（§2.2 の nonce の切り分け、§7 の 3 モデル、§7.1.1 の passport / background-check の整理、§9.4.2 の mutual authentication）は `-17` 時点の精読に基づく。**`-18` でこれらが変わっていないかは TOC の一致のみで確認しており、本文の差分は取っていない。**
 
 ## 本研究に効く定義・要件
 
@@ -134,7 +167,9 @@ Challenge/Response では双方向に機微情報が流れるため相互認証�
 
 ## 未解決・気になる点
 
-- **版の動き**: `-17`（2026-04-02）で WG Last Call、Doc Shepherd Follow-up 中、マイルストーンは 2026-04。**RFC 化されれば ID が `rfc:XXXX` に変わる。次回 `/collect` で必ず確認すること**（RFC 化されたら seen.jsonl に新レコードを追記し、本ノートの frontmatter に両方の ID を書く）
+- **版の動き**: `-18`（2026-09-17）で依然 In WG Last Call、Doc Shepherd Follow-up 中。**RFC 化されれば ID が `rfc:XXXX` に変わる。次回 `/collect` で必ず確認すること**（2026-10-13 時点では未 RFC 化）
+- **`-17` → `-18` の本文差分を取っていない。** TOC の比較で §6.1 と §10 の新設を確認し、その 2 節だけ読んだ。§2.2 や §7 の本文が変わっていないかは未確認。**設計を固める前に `-18` を通読すること**
+- §6.1 が参照する `draft-ietf-rats-msg-wrap` が未取得。既読の `rfc:9999`（CMW）との関係（msg-wrap が 9999 になったのか、別に進行中なのか）が未確認
 - §2.2 の nonce 切り分け節、§7.2.1 の Handle ライフサイクル節、§9.2〜9.4 のセキュリティ考察が**どの版で入ったか未確認**。WG Last Call 直前に整理された可能性があり、そうならこれらは「まだ議論が動いている箇所」ということになる
 - §7.3 Streaming（broker あり／なし、4 つの図）は図中心にざっと見ただけ。**長時間 SSH セッション中の継続 attestation に使えるか**は要精読
 - Appendix A の CDDL（CoAP FETCH body の例）は未読。SSH メッセージの設計例として参考になるか

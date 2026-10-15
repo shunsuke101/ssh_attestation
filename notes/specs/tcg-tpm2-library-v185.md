@@ -200,6 +200,10 @@ Part 1 §28.2 はこの領域を「ダイジェストと、そのダイジェス
 
 設計上の答えはおそらく、H をそのまま入れるのではなく **`qualifyingData = hashAlg || HASH(H ‖ 文脈)` の形に正規化する**こと。Part 1 §28.2 が「ダイジェストと method indicator の余地」と説明している形にそのまま合う。method indicator の中身は仕様の範囲外なので、本研究がここを定義することになる——**参照モデルからの delta として明示すべき箇所がまた 1 つ増えた**。
 
+> **2026-10-13 追記: `qualifyingData` に鍵のハッシュを入れても「鍵が TPM 内にある」ことは示せない。** [[draft-reddy-rats-key-binding]] §8.3 がこの構成を批判している。§28.4 が明記するとおり **TPM は `qualifyingData` を一切解釈しない**ので、改竄されたクライアントは TPM 外で作った鍵のハッシュを入れて正当な Quote を取れる。`TPM2_Quote()` の主張は「指定 PCR の値」と「呼び出し元が渡したバイト列」に限られる。
+>
+> **鍵が TPM 内にあり所定の属性を持つことを示すには `TPM2_Certify()` を使う**（Part 1 §28.1 が attest できる対象として "Other TPM Objects - TPM2_Certify()" を挙げている）。本研究の設計では `TPM2_Quote()`（状態 + freshness）と `TPM2_Certify()`（鍵の所在）を組み合わせ、さらに SSH の `publickey` 認証の署名で所持証明を取る、という 3 点セットになる。
+
 ### 2. `TPMS_CLOCK_INFO` は問い 4 の「タイムスタンプ」に対する材料になる
 
 nonce（`qualifyingData`）が「この接続のために作られた」ことを示すのに対し、`clockInfo` は「前回から何が起きたか」を示す。

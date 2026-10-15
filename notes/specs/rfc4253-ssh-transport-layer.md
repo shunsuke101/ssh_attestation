@@ -179,6 +179,18 @@ qualifyingData = HASH( server の challenge (nonce) ‖ session identifier ‖ �
 
 のように、**freshness は server の challenge が担い、SSH セッションへの束縛は session identifier が担う**形になる（`qualifyingData` のサイズ上限により正規化が要ることは上の 2. を参照）。上で検討した「H 自体を Handle とみなす」は、challenge の往復を省く代替案として位置づけ直す。
 
+> **2026-10-13 訂正: この式だけでは足りない。** [[draft-reddy-rats-key-binding]] §8.3 が、まさにこの「claims set をハッシュして既存の attestation インターフェースの challenge として渡す」構成を批判している。TPM は `qualifyingData` を一切解釈しないので（[[tcg-tpm2-library-v185]] Part 1 §28.4）、**改竄されたクライアントは TPM 外の鍵のハッシュを入れて正当な Quote を取れてしまう。** `TPM2_Quote()` が示すのは「指定 PCR の値」と「呼び出し元が渡した 32 バイト」だけであって、「この SSH 鍵が TPM 内にある」ことではない。
+>
+> **SSH 鍵が TPM 内にあることを示すには `TPM2_Certify()` が別途必要**になる。したがって設計は次の 3 点セットになる:
+>
+> | 目的 | 手段 |
+> |---|---|
+> | 端末の状態 + freshness | `TPM2_Quote()`（`qualifyingData` に server challenge と session identifier の正規化値） |
+> | SSH 鍵が TPM 内にあること | **`TPM2_Certify()`** による鍵の証明 |
+> | 鍵の所持証明 (PoP) | **`publickey` 認証の署名**（[[rfc4252-ssh-authentication-protocol]] §7） |
+>
+> 詳細は [[draft-reddy-rats-key-binding]] の「自研究との関係」。
+
 **問い 1（どのレイヤか）について、この RFC から言えること。**
 
 KEX 方式として定義する案の利点は残る:
