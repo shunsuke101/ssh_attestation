@@ -21,15 +21,63 @@ RATS の役割では **Attester = SSH クライアント、Verifier / Relying Pa
 | RFC 9683 "Remote Integrity Verification of Network Devices Containing Trusted Platform Modules" | TPM ベースの Evidence（PCR Quote、DevID / AK の鍵構成）と Verifier の判定条件 | `notes/specs/rfc9683-riv-tpm-network-devices.md` |
 | draft-ietf-rats-reference-interaction-models "Reference Interaction Models for Remote Attestation Procedures" | Challenge/Response Remote Attestation の相互作用モデル（Handle による freshness） | `notes/specs/draft-ietf-rats-reference-interaction-models.md` |
 
+## 並行テーマ: NETCONF / YANG による challenge-response remote attestation
+
+SSH のクライアント認証とは**独立に並行して進める別テーマ**。RFC 9684 の YANG モジュール `ietf-tpm-remote-attestation` を NETCONF で運び、challenge-response remote attestation を行う研究環境を持っている。**SSH に触れていない文献でも、この環境に直結するものは収集・ノート化の対象にする。**
+
+### 研究環境
+
+| 役割 | 実体 |
+|---|---|
+| Attester | RISC-V の QEMU guest。swtpm が TPM 2.0 として見える。sysrepo-plugind の plugin `rats-attester.so` が RPC を受ける |
+| Verifier | WSL2 の host |
+| 転送 | NETCONF（netopeer2 + sysrepo） |
+
+- Verifier（host）は nonce と PCR selection を RPC `tpm20-challenge-response-attestation` で送る。
+- Attester（guest）は TPM2_Quote の結果（`quote-data`、`quote-signature`、`unsigned-pcr-values`）を返す。
+- Verifier は署名、nonce、PCR digest、Reference Value を照合して合否を判定する。
+
+**RATS の役割の向きが主テーマと逆になる点に注意。** NETCONF は SSH の上で動く（RFC 6242）。Verifier が NETCONF クライアントとして Attester に接続しに行くので、**Attester = NETCONF / SSH サーバー側、Verifier = NETCONF / SSH クライアント側**になる。これは RFC 9683 の RIV と同じ向きで、主テーマ（Attester = SSH クライアント）とは逆である（`notes/specs/rfc9683-riv-tpm-network-devices.md` の「自研究との関係」を参照）。
+
+### 設計の土台
+
+| 文書 | 設計で使う部分 | ノート |
+|---|---|---|
+| RFC 9684 "A YANG Data Model for Challenge-Response-Based Remote Attestation (CHARRA) Procedures Using Trusted Platform Modules (TPMs)" | YANG モジュール `ietf-tpm-remote-attestation` / `ietf-tcg-algs`、RPC `tpm20-challenge-response-attestation` の入出力 | 未作成 |
+| RFC 9683 "Remote Integrity Verification of Network Devices Containing Trusted Platform Modules" | NETCONF / RESTCONF 上の RIV の手順と Verifier の判定条件（主テーマと共通） | `notes/specs/rfc9683-riv-tpm-network-devices.md` |
+| RFC 6241 "Network Configuration Protocol (NETCONF)" / RFC 6242 "Using the NETCONF Protocol over Secure Shell (SSH)" | RPC の転送と、その下の SSH | 未作成 |
+
+**RFC 9684 の出力ノード名は文書内で表記が揺れている。** YANG モジュールの grouping では `quote-data`、tree 図では `TPMS_QUOTE_INFO`、XML の例では `attestation-data` になっている（2026-10-26 に原文で確認）。実装と照合するときは YANG モジュールの定義を確認すること。
+
 ## このリポジトリについて
 
 repositry URL:https://github.com/shunsuke101/ssh_attestation/tree/main
 このリポジトリは **その研究テーマの情報収集・蓄積基盤** であり、実装コードのリポジトリではない。
+主テーマ（SSH のクライアント認証への attestation 統合）と並行テーマ（NETCONF / YANG による remote attestation）の**両方を収集対象にする**。
 
 ## 実装コードのリポジトリについて
 
 repositry URL:https://github.com/shunsuke101/openssh-portable
 このリポジトリは、openssh-portableをforkして、研究テーマに沿った実装をしようとしています。
+
+## 論文探索の範囲
+
+`/collect` と `/survey` は次の領域を探索する。**実際の検索キーワード・除外条件・relevance 基準は `docs/scope.md`、巡回先は `docs/sources.md` にある。** 探索範囲を変えるときは、この節と docs の両方を直す。
+
+### 主テーマ（SSH のクライアント認証への attestation 統合）
+
+- SSH と attestation の両方に関わるもの（SSH client attestation、TPM-backed SSH key、device trust）
+- RATS の標準（Architecture、Reference Interaction Models、EAT、CoRIM、AR4SI）
+- ハードウェア信頼点と完全性の測定（TPM 2.0、measured boot、DICE、IMA）
+- 鍵と認証（SSH 証明書、FIDO2、WebAuthn の attestation statement、IDevID）
+- attestation を secure channel に束縛する設計（SEAT WG、attested TLS、channel binding）
+
+### 並行テーマ（NETCONF / YANG による remote attestation）
+
+- **NETCONF / YANG による attestation**: RFC 9684（CHARRA）と `ietf-tpm-remote-attestation`、RESTCONF 上の RIV、attestation event stream subscription、netopeer2 / sysrepo での実装
+- **Verifier の判定**: TPM2_Quote の署名検証、nonce（`qualifyingData`）の照合、PCR digest の再計算、Reference Value との照合、event log replay、Attestation Result の表現（AR4SI、EAR）
+
+**対象外**: RISC-V 固有の attestation と、仮想 TPM（swtpm、vTPM）単独の文献は、研究環境で使っていても今は探索対象に加えない。
 
 ## 記述ルール
 
@@ -94,6 +142,7 @@ repositry URL:https://github.com/shunsuke101/openssh-portable
   - 実装 `<プロジェクト名>-<slug>.md` 例 `openssh-10-0-release.md`
   - 業界 `<年月>-<ベンダ>-<slug>.md` 例 `2026-07-teleport-device-trust.md`
 - `_` で始まるファイルはテンプレート扱い。収集対象・集計対象から除外する。
+- 「自研究との関係」節は、冒頭で**主テーマ・並行テーマのどちらに効くか**を書く（両方なら両方）。
 - frontmatter は YAML として妥当であること。**タイトルや引用にコロン・引用符が含まれる場合は必ず `"` で囲みエスケープする**。
 
 ## `related-work/bibliography.bib` の規約

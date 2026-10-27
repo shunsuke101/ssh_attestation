@@ -23,7 +23,7 @@ IETF の **SEAT（Secure Evidence and Attestation Transport）Working Group** �
 
 | 憲章の要素 | 内容 | どう使うか |
 |---|---|---|
-| 適用範囲 | (D)TLS 1.3 に限定 | **SSH は明示的に対象外。ここが本研究の空白地** |
+| 適用範囲 | (D)TLS 1.3 に限定 | **SSH は現行の範囲外。ここが本研究の空白地**。ただし憲章の Future work は、初期マイルストーン完了後の再憲章先として「IKEv2 or SSH」を名指ししている（2026-10-26 追記。下の引用を参照） |
 | 認証の方向 | server authentication が主、client authentication は optional | **本研究は SEAT で従の扱いになっている client authentication 側を、SSH で主題にする**。SEAT の成果をそのまま流用できない部分があることの根拠であり、差分として明示できる |
 | コア変更の禁止 | TLS プロトコル自体は変えない | SSH でも「トランスポート層を書き換えない」制約を課す根拠として引ける |
 | freshness | Evidence と Attestation Result の **per-connection freshness** を保証する | 中心的な問い 4 に直結。SEAT がどう解いたかをそのまま参照できる |
@@ -51,6 +51,14 @@ SSH と TLS の差で、SEAT の設計をそのまま移植できない点:
 
 > the Secure Evidence and Attestation Transport (SEAT) WG will document a set of use cases that protocols such as (D)TLS should be able to support
 > — SEAT WG charter
+
+> After the initial Milestones are complete, the WG may recharter to work on adding attestation to protocols other than (D)TLS, such as IKEv2 or SSH, provided there is sufficient interest.
+> — charter-ietf-seat-01（datatracker の "Last updated" は 2026-03-18。2026-10-26 に原文で確認）
+
+> This effort will be restricted to leveraging the (D)TLS 1.3 protocol and an attestation binding to a (D)TLS 1.3 connection.
+> — charter-ietf-seat-01
+
+**訂正（2026-10-26）**: 本ノートの初版は「SSH は明示的に対象外」とだけ書いていたが、Future work の上記の文を読み落としていた。憲章は SSH を現行の範囲から外しつつ、将来の対象として明記している。（※ここから解釈）本研究にとっては「IETF が SSH への attestation 統合を将来課題として認めている」という Introduction の論拠になる。同時に、SEAT が再憲章して SSH を扱い始めれば競合になりうるので、`seat@ietf.org` で再憲章の議論が出ないかを見続ける必要がある。
 
 ## 自研究との関係
 
